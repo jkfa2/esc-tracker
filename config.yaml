@@ -1,0 +1,940 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Site monitor config
+#
+#   Pause a watcher:   enabled: true  →  enabled: false   (commit; applies on the next run)
+#   Add a watcher:     copy a block of the same type, change name + url, commit.
+#                      The first run only records a baseline (no notifications).
+#   Display name:      `label:` is what Discord shows. Keep `name:` stable (it names the file in state/).
+#   Keywords:          keywords: ["eurovizij"] → only report items containing a word STARTING with it
+#                      (so endings are covered). "=esc" = exact word only, "*word" = also inside words.
+#   Quoting:           put "quotes" around any value containing a colon followed by a space, or emoji.
+#
+#   Test locally:      python monitor.py test "<name>"      python monitor.py match "<keyword>" "<text>"
+# ─────────────────────────────────────────────────────────────────────────────
+
+defaults:
+  timeout: 30            # seconds per request
+  fail_alert_after: 3    # Discord alert after this many failed runs in a row (and again when it recovers)
+  # user_agent: "..."    # optional; default looks like a normal browser
+
+watchers:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 1. SITEMAPS
+  #    deep: true → when a child sitemap changes, report WHICH URLs are new or changed.
+  #    Optional: 
+  #      - include_children: only looks at the sitemaps you care about (e.g., include_children: ["post-sitemap"])
+  #      - exclude_children: exclude certain sitemaps (same logic as above)
+  #      - ignore_urls: ignore URLs that contain specific values (e.g., ignore_urls: ["/tag/", "/author/"])
+  #      - notify_removed: get notification if a URL gets removed from the sitemap (e.g., notify_removed: true). False by default. 
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - name: Albania - FiK Sitemap
+    label: 🇦🇱 festivali.rtsh.al - Sitemap
+    type: sitemap
+    url: https://festivali.rtsh.al/sitemap_index.xml
+    enabled: true
+    deep: true
+
+  - name: Cyprus - RIK Corporate Sitemap
+    label: 🇨🇾 corporate.rik.cy - Sitemap
+    type: sitemap
+    url: https://corporate.rik.cy/sitemap.xml
+    enabled: true
+    keywords: ["=esc", "eurovision"]
+
+  - name: Eurovision - Sitemap
+    label: 🌐 eurovision.com - Sitemap
+    type: sitemap
+    url: https://www.eurovision.com/sitemap.xml
+    enabled: false  # 403 error
+    snapshots: true
+    snapshot_selector: ["#main-content"]
+
+  - name: Greece - Sitemap
+    label: 🇬🇷 eurovision.ert.gr - Sitemap
+    type: sitemap
+    url: https://eurovision.ert.gr/sitemap_index.xml
+    enabled: false    # randomly gives a 404 despite page existing
+    deep: true
+
+  - name: Malta - Sitemap
+    label: 🇲🇹 maltaeurovision.mt - Sitemap
+    type: sitemap
+    url: https://maltaeurovision.mt/sitemap_index.xml
+    enabled: true
+    deep: true
+
+  - name: Moldova - Sitemap
+    label: 🇲🇩 eurovision.md - Sitemap
+    type: sitemap
+    url: https://eurovision.md/sitemap
+    enabled: true
+    deep: true
+
+  - name: Romania - Sitemap
+    label: 🇷🇴 eurovisionromania.ro - Sitemap
+    type: sitemap
+    url: https://eurovisionromania.ro/sitemap.xml
+    enabled: true
+    deep: true
+
+  - name: Ukraine - Sitemap
+    label: 🇺🇦 eurovision.ua - Sitemap
+    type: sitemap
+    url: https://eurovision.ua/sitemap_index.xml
+    enabled: false          # paused: Cloudflare blocks GitHub's servers (403)
+    deep: true
+
+  # ── Not set up yet: page diffs for sitemaps ────────────────────────────────
+  #    Add these lines to any sitemap watcher above to see WHAT changed on each page:
+  #      - snapshots: true or false. Saves the 30 most recent pages and compares diffs across them.
+  #                       Use with snapshot_selector to get the right selection.
+  #      - snapshot_selector: use with bookmark you added to Chrome. Only compares the section(s) you specify (e.g., snapshot_selector: ["media", "content"])
+  #    The first run silently saves the 30 most recent pages; diffs appear from then on.
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 2. WORDPRESS REST API
+  #    Reports new IDs, changed `modified` dates, and changes in the total count.
+  #    Optional: 
+  #      - pages: put any number of pages for the REST API. Default takes 100 items, so `pages: 2` would take 200, etc.
+  #      - cache_bust: true/false. Breaks cached pages as sometimes pages keep them.
+  #      - params: extra REST API filters. For example, params: categories: 12, per_page: 20 (note: these need to be indented!).
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - name: Albania FiK website - WP Media
+    label: 🇦🇱 festivali.rtsh.al - Media
+    type: wordpress
+    url: https://festivali.rtsh.al/wp-json/wp/v2/media
+    enabled: true
+
+  - name: Albania FiK website - WP Artists
+    label: 🇦🇱 festivali.rtsh.al - Artists
+    type: wordpress
+    url: https://festivali.rtsh.al/wp-json/wp/v2/artistet/
+    enabled: true
+
+  - name: Albania FiK website - WP Pages
+    label: 🇦🇱 festivali.rtsh.al - Pages
+    type: wordpress
+    url: https://festivali.rtsh.al/wp-json/wp/v2/pages
+    enabled: true
+
+  - name: Albania FiK website - WP Posts
+    label: 🇦🇱 festivali.rtsh.al - Posts
+    type: wordpress
+    url: https://festivali.rtsh.al/wp-json/wp/v2/posts
+    enabled: true
+
+  - name: Greece - WP Media
+    label: 🇬🇷 eurovision.ert.gr - Media
+    type: wordpress
+    url: https://eurovision.ert.gr/wp-json/wp/v2/media
+    enabled: true
+    cache_bust: true
+
+  - name: Greece - WP Posts
+    label: 🇬🇷 eurovision.ert.gr - Posts
+    type: wordpress
+    url: https://eurovision.ert.gr/wp-json/wp/v2/posts
+    enabled: true
+    cache_bust: true
+
+  - name: Greece - WP Pages
+    label: 🇬🇷 eurovision.ert.gr - Pages
+    type: wordpress
+    url: https://eurovision.ert.gr/wp-json/wp/v2/pages
+    enabled: true
+    cache_bust: true
+
+  - name: Malta - WP Media
+    label: 🇲🇹 maltaeurovision.mt - Media
+    type: wordpress
+    url: https://maltaeurovision.mt/wp-json/wp/v2/media
+    enabled: true
+    cache_bust: true
+
+  - name: Malta - WP Posts
+    label: 🇲🇹 maltaeurovision.mt - Posts
+    type: wordpress
+    url: https://maltaeurovision.mt/wp-json/wp/v2/posts
+    enabled: true
+    cache_bust: true
+
+  - name: Malta - WP Pages
+    label: 🇲🇹 maltaeurovision.mt - Pages
+    type: wordpress
+    url: https://maltaeurovision.mt/wp-json/wp/v2/pages
+    enabled: true
+    cache_bust: true
+
+  - name: Romania - WP Media
+    label: 🇷🇴 eurovisionromania.ro - Media
+    type: wordpress
+    url: https://eurovisionromania.ro/wp-json/wp/v2/media
+    enabled: true
+    cache_bust: true
+
+  - name: Romania - WP Posts
+    label: 🇷🇴 eurovisionromania.ro - Posts
+    type: wordpress
+    url: https://eurovisionromania.ro/wp-json/wp/v2/posts
+    enabled: true
+    cache_bust: true
+
+  - name: Romania - WP Pages
+    label: 🇷🇴 eurovisionromania.ro - Pages
+    type: wordpress
+    url: https://eurovisionromania.ro/wp-json/wp/v2/pages
+    enabled: true
+    cache_bust: true
+
+  - name: San Marino - WP Media
+    label: 🇸🇲 dreamingsanmarinosongcontest.com - Media
+    type: wordpress
+    url: https://dreamingsanmarinosongcontest.com/wp-json/wp/v2/media
+    enabled: true
+    cache_bust: true
+
+  - name: San Marino - WP Posts
+    label: 🇸🇲 dreamingsanmarinosongcontest.com - Posts
+    type: wordpress
+    url: https://dreamingsanmarinosongcontest.com/wp-json/wp/v2/posts
+    enabled: true
+    cache_bust: true
+
+  - name: San Marino - WP Pages
+    label: 🇸🇲 dreamingsanmarinosongcontest.com - Pages
+    type: wordpress
+    url: https://dreamingsanmarinosongcontest.com/wp-json/wp/v2/pages
+    enabled: true
+    cache_bust: true
+
+  # ── Not set up yet: text diffs for WordPress ───────────────────────────────
+  #    Works for posts, pages and custom post types such as "artistet". Add to a watcher:
+  #      - diff: true. Add and set to true; checks more fields (without this it checks title, link, and modified date).
+  #      - diff_fields: true. Use with /media as those have no content. You can e.g. use ["description", "caption"]
+  #    (Media items have no content; for those use: diff: true  +  diff_fields: ["description", "caption"])
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 3. GENERAL PAGES
+  #    mode: text  (default) → the page gets EDITED: shows the changed lines
+  #    mode: links           → a LIST that grows: shows only new links
+  #    Optional: 
+  #      - selector: choose part of the page to focus on. Use with the bookmark added to Chrome. For example, selector: "media"
+  #      - exclude_selectors: choose parts of page to ignore, like "header" or "footer"
+  #      - ignore_patterns: ignore certain text parts on page. For example, ignore_patterns: ['^Updated', 'views$', '\d+ comments']
+  #      - keywords: filter on specific keywords. Matches with beginning (so "Eurovis" finds "Eurovision"). For exact matches use = (e.g. =esc).
+  #                  Use *songfestival to catch "Eurovisiesongfestival"
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - name: Armenia - Eurovision News
+    label: 🇦🇲 eurovision.am - News page
+    type: page
+    url: https://eurovision.am/hy/news/
+    enabled: true
+    mode: links
+    selector: 'div.xl\:max-w-6xl'
+
+  - name: Armenia - Terms and Conditions (EN)
+    label: 🇦🇲 eurovision.am - Terms and Conditions EN (PDF)
+    type: pdf
+    url: https://eurovision.am/media/landing/TermsAndConditions_en.pdf
+    enabled: true
+    allow_missing: true
+
+  - name: Armenia - Terms and Conditions (HY)
+    label: 🇦🇲 eurovision.am - Terms and Conditions HY (PDF)
+    type: pdf
+    url: https://eurovision.am/media/landing/TermsAndConditions_hy.pdf
+    enabled: true
+    allow_missing: true
+
+  - name: Armenia - Terms and Conditions (Standard)
+    label: 🇦🇲 eurovision.am - Terms and Conditions (PDF)
+    type: pdf
+    url: https://eurovision.am/media/landing/TermsAndConditions.pdf
+    enabled: true
+    allow_missing: true
+
+  - name: Armenia - Application Page (HY)
+    label: 🇦🇲 eurovision.am - Application Page (HY)
+    type: page
+    url: https://eurovision.am/hy/app
+    enabled: true
+    mode: text
+    exclude_selectors: ["header", "footer", "nav"]
+    allow_missing: true
+
+  - name: Armenia - Application Page (EN)
+    label: 🇦🇲 eurovision.am - Application Page (EN)
+    type: page
+    url: https://eurovision.am/en/app
+    enabled: true
+    mode: text
+    exclude_selectors: ["header", "footer", "nav"]
+    allow_missing: true
+
+  - name: Australia - Eurovision News
+    label: 🇦🇺 sbs.com.au - What's On - Eurovision
+    type: page
+    url: https://www.sbs.com.au/whats-on/collection/eurovision
+    enabled: true
+    mode: links
+    selector: "ul.PaginatedCollection-module__JAL4OG__cardList"
+    keywords: ["eurovision"]
+
+  - name: Australia - TV Tonight - Eurovision
+    label: 🇦🇺 tvtonight.com.au - Eurovision
+    type: page
+    url: https://tvtonight.com.au/category/eurovision
+    enabled: false            # 403 blocked
+    mode: links
+    selector: "#post_archive > div.elementor-widget-container > div.ecs-posts.elementor-posts-container"
+
+  - name: Austria - Song Contest page
+    label: 🇦🇹 songcontest.orf.at - Storys
+    type: page
+    url: https://songcontest.orf.at/storys
+    enabled: true
+    mode: links
+    selector: 'ul.story-grid'
+
+  - name: Azerbaijan - Eurovision page
+    label: 🇦🇿 itv.az - Eurovision
+    type: page
+    url: https://itv.az/eurovision
+    enabled: false      # content loaded by JavaScript
+    mode: text
+    selector: "#eurovision"
+
+  - name: Belgium - VRT NWS
+    label: 🇧🇪 vrt.be - Eurovision News
+    type: page
+    url: https://www.vrt.be/vrtnws/nl/dossiers/2017/09/eurovisiesongfestival/
+    enabled: true
+    mode: links
+    selector: "ul.flex.flex-col"
+    notify_title_changes: true
+
+  - name: Bulgaria - BNT Eurovision News
+    label: 🇧🇬 bnt.bg - Евровизия News
+    type: page
+    url: https://bntnews.bg/search?q=%D0%95%D0%B2%D1%80%D0%BE%D0%B2%D0%B8%D0%B7%D0%B8%D1%8F
+    enabled: true
+    mode: links
+    selector: "div.more-top-news.d-flex"
+    notify_title_changes: true
+
+  - name: Bulgaria - BNT Eurovision Regulations
+    label: 🇧🇬 bnt.bg - Евровизия Regulations
+    type: page
+    url: https://bnt.bg/pravilnici-i-zakoni-138pages.html
+    enabled: true
+    mode: links
+    selector: "div.txt-grey-part.txt-news:nth-of-type(12)"
+
+  - name: Canada - CBC Eurovision page
+    label: 🇨🇦 cbc.ca - Eurovision page
+    type: page
+    url: https://www.cbc.ca/music/eurovision
+    enabled: true
+    mode: links
+    selector: 'div.sectionContainer-wrapper.oc-l-sectionContainer-withRightRail'
+
+  - name: Croatia - Dora
+    label: 🇭🇷 hrt.hr - Dora
+    type: page
+    url: https://www.hrt.hr/dora
+    enabled: true
+    mode: link
+    selector: 'div.lg\:-mx-4 > div.flex.flex-col'
+
+  - name: Croatia - Eurosong
+    label: 🇭🇷 hrt.hr - Eurosong
+    type: page
+    url: https://www.hrt.hr/eurosong
+    enabled: true
+    mode: link
+    selector: 'div.lg\:-mx-4 > div.flex.flex-col'
+
+  - name: Denmark - DMGP Submissions Form
+    label: 🇩🇰 dr.dk - DMGP Submissions Form
+    type: page
+    url: https://www.dr.dk/event/melodigrandprix/tilmelding
+    enabled: false    # JS loaded, can't see content
+    mode: text
+
+  - name: Denmark - DMGP Page
+    label: 🇩🇰 dr.dk - DMGP Page
+    type: page
+    url: https://www.dr.dk/event/melodigrandprix
+    enabled: true
+    mode: links
+    keywords: ["grand prix", "eurovision"]
+
+  - name: Denmark - DR Presse
+    label: 🇩🇰 dr.dk - Presse
+    type: page
+    url: https://www.dr.dk/presse
+    enabled: true
+    mode: links
+    selector: 'div.hydra-site-front-page-content > div.dre-container.dre-container--margin-bottom'
+    keywords: ["grand prix", "eurovision"]
+
+  - name: EBU - Reference Group
+    label: 🌐 ebu.ch - Reference Group
+    type: page
+    url: https://www.ebu.ch/groups/eurovision-song-contest-reference
+    enabled: false    # 403 error
+    mode: text
+    selector: '#intro > div, div.content-event.fade-in-y_NO'
+
+  - name: Estonia - Eesti Laul page
+    label: 🇪🇪 eeter.err.ee - Eesti Laul
+    type: page
+    url: https://eeter.err.ee/k/eesti-laul
+    enabled: true
+    mode: links
+    exclude_selectors: ["header", "footer", "nav"]
+
+  - name: Estonia - Eurovision page
+    label: 🇪🇪 eeter.err.ee - Eurovision
+    type: page
+    url: https://eeter.err.ee/k/eurovisioon
+    enabled: true
+    mode: links
+    selector: '#main'
+
+  - name: Estonia - Eesti Laul submissions page
+    label: 🇪🇪 eeter.err.ee - Eesti Laul submissions
+    type: page
+    url: https://eeter.err.ee/eestiLaul
+    enabled: true
+    mode: text
+    selector: 'div.left-block'
+
+  - name: Eurovision - Latest News
+    label: 🌐 eurovision.com - Latest News
+    type: page
+    url: https://www.eurovision.com/stories/
+    enabled: false  # 403 error
+    mode: links
+    selector: 'section.mt-2.md\:mt-4'
+
+  - name: Eurovision - Press Releases
+    label: 🌐 eurovision.com - Press Releases
+    type: page
+    url: https://www.eurovision.com/newsroom/release/
+    enabled: false  # 403 error
+    mode: links
+    selector: 'section.mt-2.md\:mt-4'
+
+  - name: France - Eurovision page
+    label: 🇫🇷 france.tv - Eurovision page
+    type: page
+    url: https://www.france.tv/france-2/eurovision/
+    enabled: true
+    mode: text
+    selector: 'div.zFjCb'
+
+  - name: France - Participate in a Show
+    label: 🇫🇷 francetelevisions.fr - Participer à une émission
+    type: page
+    url: https://www.francetelevisions.fr/et-vous/participer-a-une-emission
+    enabled: true
+    mode: text
+    keywords: ["eurovision"]
+
+  - name: Georgia - Eurovision page
+    label: 🇬🇪 1tv.ge - Evrovizia Georgia
+    type: page
+    url: https://1tv.ge/evrovizia-georgia/
+    enabled: false    # 403
+    mode: links
+    selector: 'div.lg\:border-r.border-stroke-secondary-2'
+
+  - name: Georgia - Eurovision search
+    label: 🇬🇪 1tv.ge - ევროვიზია search
+    type: page
+    url: https://1tv.ge/?s=%E1%83%94%E1%83%95%E1%83%A0%E1%83%9D%E1%83%95%E1%83%98%E1%83%96%E1%83%98%E1%83%90
+    enabled: false    # 403
+    mode: links
+    selector: 'div.lg\:border-r.border-stroke-secondary-2'
+
+  - name: Germany - Eurovision page
+    label: 🇩🇪 eurovision.de - News
+    type: page
+    url: https://www.eurovision.de/news/nachrichten-zum-esc,news-1130.html
+    enabled: true
+    mode: links
+
+  - name: Greece - ERT Press Eurovision
+    label: 🇬🇷 press.ert.gr - Eurovision
+    type: page
+    url: https://press.ert.gr/eurovision/
+    enabled: true
+    mode: links
+    selector: 'div.td-ss-main-content'
+
+  - name: Italy - Sanremo page
+    label: 🇮🇹 rai.it - Sanremo
+    type: page
+    url: https://www.rai.it/programmi/sanremo/
+    enabled: true
+    mode: links
+    notify_title_changes: true
+
+  - name: Lithuania - Eurovizija page
+    label: 🇱🇹 lrt.lt - Eurovizija page
+    type: page
+    url: https://www.lrt.lt/projektai/eurovizija
+    enabled: true
+    mode: text
+    exclude_selectors: ["header", "footer", "nav"]
+
+  - name: Luxembourg - Homepage (EN)
+    label: 🇱🇺 eurovision.rtl.lu - News (EN)
+    type: page
+    url: https://eurovision.rtl.lu/news
+    enabled: true
+    mode: links
+
+  - name: Luxembourg - Homepage (FR)
+    label: 🇱🇺 eurovision.rtl.lu - News (FR)
+    type: page
+    url: https://eurovision.rtl.lu/news/fr
+    enabled: true
+    mode: links
+
+  - name: Luxembourg - Homepage (LU)
+    label: 🇱🇺 eurovision.rtl.lu - News (LU)
+    type: page
+    url: https://eurovision.rtl.lu/news/lu
+    enabled: true
+    mode: links
+
+  - name: Luxembourg - LU Search
+    label: 🇱🇺 rtl.lu - Eurovision search (LU)
+    type: page
+    url: https://www.rtl.lu/search?q=Eurovision
+    enabled: true
+    mode: links
+    selector: 'div.TwoColumnContainer_container__Q8W_O > div'
+
+  - name: Luxembourg - EN Search
+    label: 🇱🇺 today.rtl.lu - Eurovision search (EN)
+    type: page
+    url: https://today.rtl.lu/search?q=Eurovision
+    enabled: true
+    mode: links
+    selector: 'div.TwoColumnContainer_container__Q8W_O > div'
+
+  - name: Luxembourg - FR Search
+    label: 🇱🇺 infos.rtl.lu - Eurovision search (FR)
+    type: page
+    url: https://infos.rtl.lu/search?q=Eurovision
+    enabled: true
+    mode: links
+    selector: 'div.TwoColumnContainer_container__Q8W_O > div'
+
+  - name: Malta - Eurovision website
+    label: 🇲🇹 maltaeurovision.mt - News section
+    type: page
+    url: https://maltaeurovision.mt/news/
+    enabled: true
+    mode: links
+    exclude_selectors: ["header", "footer", "nav"]
+
+  - name: Moldova - Comunicate TRM
+    label: 🇲🇩 trm.md - Comunicate TRM
+    type: page
+    url: https://trm.md/ro/comunicate-trm
+    enabled: true
+    mode: links
+    exclude_selectors:
+      - 'div.d-flex.justify-content-center > div.d-flex.flex-row:nth-of-type(1)'
+      - 'div.d-flex.justify-content-center > div.d-flex.flex-row:nth-of-type(2)'
+      - 'div._dq-single-news-right-bar.d-flex'
+      - header
+      - footer
+      - nav
+      
+  - name: Moldova - Eurovision
+    label: 🇲🇩 moldova1.md - Eurovision
+    type: page
+    url: https://moldova1.md/c/ro/9
+    enabled: true
+    mode: links
+    exclude_selectors: ["header", "footer", "nav"]
+
+  - name: Montenegro - Regulativa
+    label: 🇲🇪 rtcg.me - Regulations
+    type: page
+    url: https://rtcg.me/rtcg/dokumenti/regulativa.html
+    enabled: true
+    mode: links
+    selector: '#content > div'
+    keywords: ["eurovision", "eurosong", "montesong", "evrovizi"]
+
+  - name: Montenegro - Konkursi
+    label: 🇲🇪 rtcg.me - Competitions
+    type: page
+    url: https://rtcg.me/rtcg/konkursiioglasi.html
+    enabled: true
+    mode: links
+    selector: '#content > div'
+    keywords: ["eurovision", "eurosong", "montesong", "evrovizi"]
+
+  - name: Montenegro - Bilten RTCG
+    label: 🇲🇪 rtcg.me - Regulations
+    type: page
+    url: https://rtcg.me/rtcg/_rtcg/savjet/biltenrtcg.html
+    enabled: true
+    mode: links
+    selector: '#content > div'
+    keywords: ["eurovision", "eurosong", "montesong", "evrovizi"]
+
+  - name: Norway - MGP Page
+    label: 🇳🇴 nrk.no - MGP Page
+    type: page
+    url: https://www.nrk.no/mgp/
+    enabled: true
+    mode: links
+    selector: 'div.col.fc:nth-of-type(4) > div.group.rich'
+
+  - name: Norway - MGP Search
+    label: 🇳🇴 nrk.no - MGP Search
+    type: page
+    url: https://www.nrk.no/sok/?q=melodi%20grand%20prix&scope=nrkno
+    enabled: true
+    mode: links
+    selector: 'div.nrkno-search-page__content'
+
+  - name: Norway - NRK Presse
+    label: 🇳🇴 nrk.no - NRK Presse
+    type: page
+    url: https://info.nrk.no/presse
+    enabled: true
+    mode: links
+    selector: 'ul.wp-block-rss.columns-3'
+    keywords: ["mgp", "grand prix", "eurovision"]
+
+  - name: Poland - Eurowizja regulations
+    label: 🇵🇱 eurowizja.tvp.pl - Regulaminy
+    type: page
+    url: https://eurowizja.tvp.pl/45308010/aktualnosci
+    enabled: true
+    mode: matches
+    pattern: '"_id"\s*:\s*(?P<id>\d+),\s*"parent_id"\s*:\s*75220063,\s*"title"\s*:\s*"(?P<title>(?:[^"\\]|\\.)+)",\s*"url"\s*:\s*"(?P<url>(?:[^"\\]|\\.)+)"'
+
+  - name: Poland - Eurowizja News
+    label: "🇵🇱 eurowizja.tvp.pl - Aktualności"
+    type: page
+    url: https://eurowizja.tvp.pl/45308010/aktualnosci
+    enabled: true
+    mode: matches
+    pattern: '"_id"\s*:\s*(?P<id>\d+),\s*"type"\s*:\s*"[^"]*",\s*"title"\s*:\s*"(?P<title>(?:[^"\\]|\\.)+)",\s*"url"\s*:\s*"(?P<url>(?:[^"\\]|\\.)+)"'
+
+  - name: Romania - TVR Comunicate
+    label: 🇷🇴 tvr.ro - TVR Comunicate
+    type: page
+    url: http://www.tvr.ro/comunicate.html
+    enabled: true
+    mode: links
+    selector: 'div.right > div'
+    keywords: ["eurovision", "selectia nationala", "selecția națională"]
+
+  - name: San Marino - Dreaming San Marino Song Contest Casting Page
+    label: 🇸🇲 dreamingsanmarinosongcontest.com - Casting
+    type: page
+    url: https://dreamingsanmarinosongcontest.com/casting/
+    enabled: true
+    mode: text
+    exclude_selectors: ["header", "footer", "nav"]
+
+  - name: San Marino - Dreaming San Marino Song Contest Regulations
+    label: 🇸🇲 dreamingsanmarinosongcontest.com - Regulations (EN)
+    type: page
+    url: https://dreamingsanmarinosongcontest.com/regolamento-eng/
+    enabled: true
+    mode: text
+    selector: 'div.main-content'
+
+  - name: San Marino - Segreteria SM
+    label: 🇸🇲 segreteria.sm - Delibere Segreteria
+    type: page
+    url: https://www.interni.segreteria.sm/on-line/home/delibere-congresso-di-stato.html?modalita=inline&P0_path=%2Fhome%2Ftomcat%2Findicizzazione%2Findexdelibere&P0_paginazione=25&P0_pagina=1&P0_oggetto=eurovision&P0_numero=&P0_data_gg=&P0_data_mm=&P0_data_aa=&annoiniziale=&annofinale=&P0_stato_delibera=&categoria=&P0_document=&P0_categories=&P0_data_ordered=&P0_orderBy=data_ordered%2Cnumero&P0_order=desc%2Casc&P0_operatorMustBe=only&indicericerca=-1&x=0&y=0
+    enabled: true
+    mode: text
+    selector: '#columns'
+
+  - name: Serbia - RTS PZE Tag
+    label: 🇷🇸 rts.rs - PzE Tag
+    type: page
+    url: https://www.rts.rs/lat/pretraga/tagStories.html?tagId=103977&tag=pesma-za-evroviziju
+    enabled: true
+    mode: links
+    selector: '#content > div:nth-child(2)'
+    notify_title_changes: true
+
+  - name: Serbia - RTS Pesma Evrovizije page
+    label: 🇷🇸 rts.rs - Pesma Evrovizije page
+    type: page
+    url: https://www.rts.rs/lat/rts/pesma-evrovizije.html
+    enabled: true
+    mode: links
+    selector: 'div:nth-child(2) > div > div:nth-child(1) > div > nav.navi.clear-fix > ul.nav, div.row-2-1-cols.row-block'
+
+  - name: Serbia - RTS Konkursi
+    label: 🇷🇸 rts.rs - Konkursi 2026
+    type: page
+    url: https://www.rts.rs/lat/rts/javni-servis/konkursi/5895382/konkursi-2026.html
+    enabled: true
+    mode: matches
+    pattern: '<box\s+[\w-]+\s+(\d+)\s+file>'
+    item_url: https://www.rts.rs/boxes/fileBox.jsp?boxId={id}&autoplay=false&pClass=box-left
+    keywords: ["eurovision", "евровизи"]
+
+  - name: Slovenia - EMA
+    label: 🇸🇮 rtvslo.si - EMA
+    type: page
+    url: https://www.rtvslo.si/zabava-in-slog/glasba/ema
+    enabled: true
+    mode: links
+    selector: '#main-container'
+
+  - name: Slovenia - RTVSLO Press Releases
+    label: 🇸🇮 rtvslo.si - Press Releases
+    type: page
+    url: https://www.rtvslo.si/rtv/za-medije/sporocila-za-javnost/
+    enabled: true
+    mode: links
+    selector: '#main-container'
+    keywords: ["=ema", "evrovizi", "eurovision"]
+
+  - name: Spain - RTVE Comunicación
+    label: 🇪🇸 rtve.es - RTVE Comunicación
+    type: page
+    url: https://www.rtve.es/comunicacion/
+    enabled: true
+    mode: links
+    selector: '#mainContent'
+    keywords: ["eurovision", "eurovisi"]
+
+  - name: Switzerland - SRF Eurovision page
+    label: 🇨🇭 srf.ch - Eurovision page
+    type: page
+    url: https://www.srf.ch/sendungen/eurovision-song-contest
+    enabled: true
+    mode: links
+    exclude_selectors: ["header", "footer", "nav"]
+
+  - name: Switzerland - RSI Eurovision page
+    label: 🇨🇭 rsi.ch - Eurovision page
+    type: page
+    url: https://www.rsi.ch/cultura/musica/eurovision/
+    enabled: true
+    mode: links
+    selector: 'div.p-section.section-container > section.s-section.section-margin'
+
+  - name: Ukraine - Corp Suspilne News
+    label: 🇺🇦 corp.suspilne.media - News
+    type: page
+    url: https://corp.suspilne.media/novyny/
+    enabled: false    # 403 
+    mode: links
+    selector: 'div.thegem-template-wrapper.thegem-template-blog-archive > div:nth-child(3), #news-page_block-news-grid-bottom-desktop'
+
+  - name: United Kingdom - Eurovision page
+    label: 🇬🇧 bbc.co.uk - Eurovision page
+    type: page
+    url: https://www.bbc.co.uk/programmes/b0070hvg
+    enabled: true
+    mode: links
+    selector: 'div.br-container__inner'
+
+  - name: United Kingdom - Media Center
+    label: 🇬🇧 bbc.co.uk - Media Center
+    type: page
+    url: https://www.bbc.co.uk/mediacentre/
+    enabled: true
+    mode: links
+    keywords: ["eurovision"]
+
+  # ── Not set up yet: keywords on pages ──────────────────────────────────────
+  #    Example: a news homepage where you only want links about the contest.
+  #      - name: Example news homepage
+  #        type: page
+  #        url: https://example.com/
+  #        mode: links
+  #        keywords: ["songfestival", "eurovisie"]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # 4. RSS / ATOM
+  #    Reports each new item.
+  #    Optional:
+  #      - keywords: filter on specific keywords. Matches with beginning (so "Eurovis" finds "Eurovision"). For exact matches use = (e.g. =esc).
+  #                  Use *songfestival to catch "Eurovisiesongfestival"
+  #      - max_per_run: default 10. Maximum number of new items from one RSS that gets sent in a single run.
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - name: Albania - Fest Search RSS
+    label: 🇦🇱 Albania - Fest Search RSS
+    type: rss
+    url: https://rtsh.al/?s=fest&feed=rss2
+    enabled: true
+    keywords: ["=fest", "festival+kenges"]
+  
+  - name: Australia - TV Tonight RSS
+    label: 🇦🇺 Australia - TV Tonight - Eurovision RSS
+    type: rss
+    url: https://tvtonight.com.au/category/eurovision/feed
+    enabled: true
+
+  - name: Austria - Kleine Zeitung RSS
+    label: 🇦🇹 kleinezeitung.at - Kultur RSS
+    type: rss
+    url: https://www.kleinezeitung.at/rss/rubriken/kultur
+    enabled: true
+    keywords: ["=esc", "esc2", "song contest", "eurovision"]
+
+  - name: Austria - ORF RSS
+    label: 🇦🇹 orf.at - News RSS
+    type: rss
+    url: https://rss.orf.at/news.xml
+    enabled: true
+    keywords: ["=esc", "esc2", "song contest", "eurovision"]
+
+  - name: Austria - ORF Ö3 RSS
+    label: 🇦🇹 orf.at - Ö3 RSS
+    type: rss
+    url: https://rss.orf.at/oe3.xml
+    enabled: true
+    keywords: ["=esc", "esc2", "song contest", "eurovision"]
+
+  - name: Denmark - DR News RSS
+    label: 🇩🇰 dr.dk - News RSS
+    type: rss
+    url: https://www.dr.dk/nyheder/service/feeds/senestenyt
+    enabled: true
+    keywords: ["grand prix", "eurovision"]
+
+  - name: EBU - Latest News RSS
+    label: 🌐 ebu.ch - Latest News RSS
+    type: rss
+    url: https://www.ebu.ch/rss-search/header/news/news-1/latest_EBU_news.rss
+    enabled: true
+    keywords: ["=esc", "eurovision"]
+
+  - name: Finland - Yle UMK RSS
+    label: 🇫🇮 yle.fi - UMK RSS
+    type: rss
+    url: https://yle.fi/rss/t/18-200201/fi
+    enabled: true
+
+  - name: Iceland - Eurovision RSS
+    label: 🇮🇸 ruv.is - Eurovision Tag RSS
+    type: rss
+    url: https://www.ruv.is/rss/tag/eurovision
+    enabled: true
+
+  - name: Italy - Rai Ufficio Stampa RSS
+    label: 🇮🇹 rai.it - Ufficio Stampa RSS
+    type: rss
+    url: https://www.rai.it/ufficiostampa/articoli/Rss/ContentSet-72310039-52ec-4571-bc36-2d4c73fd7d1a.xml
+    enabled: true
+    keywords: ["=esc", "eurovision"]
+
+  - name: Latvia - Culture RSS
+    label: 🇱🇻 lsm.lv - Kultura RSS
+    type: rss
+    url: https://www.lsm.lv/rss/?lang=lv&catid=67
+    enabled: true
+    keywords: ["supernova", "eirovizi", "eirovīzi", "eurovisi"]
+
+  - name: Lithuania - Eurovision RSS
+    label: 🇱🇹 lrt.lt - Eurovision RSS
+    type: rss
+    url: https://www.lrt.lt/?rss
+    enabled: true
+    keywords: ["eurovizij", "eurovision"]
+
+  - name: Malta - TVMNews Eurovision RSS
+    label: 🇲🇹 tvmnews.mt - Eurovision RSS
+    type: rss
+    url: https://tvmnews.mt/ahbarijiet_category/eurovision/feed/
+    enabled: true
+
+  - name: Montenegro - Eurosong RSS
+    label: 🇲🇪 rtcg.me - Eurosong RSS
+    type: rss
+    url: https://rtcg.me/magazin/eurosong/rss.html
+    enabled: true
+
+  - name: Portugal - FdC Feed
+    label: 🇵🇹 media.rtp.pt - FdC Feed
+    type: rss
+    url: https://media.rtp.pt/festivaldacancao/artigos/feed/
+    enabled: true
+
+  - name: San Marino - SMRTV Feed
+    label: 🇸🇲 sanmarinortv.sm - RSS
+    type: rss
+    url: https://www.sanmarinortv.sm/rss.xml
+    enabled: true
+    keywords: ["eurovision", "san marino song", "song contest"]
+
+  - name: Sweden - Expressen Melodifestivalen RSS
+    label: 🇸🇪 expressen.se - Melodifestivalen RSS
+    type: rss
+    url: https://feeds.expressen.se/noje/melodifestivalen
+    enabled: true
+
+  - name: Sweden - Aftonbladet Melodifestivalen RSS
+    label: 🇸🇪 aftonbladet.se - Melodifestivalen RSS
+    type: rss
+    url: https://rss.aftonbladet.se/rss2/small/pages/sections/nojesbladet/melodifestivalen
+    enabled: true
+
+  - name: Sweden - SVT Kultur RSS
+    label: 🇸🇪 svt.se - Kultur RSS
+    type: rss
+    url: https://www.svt.se/kultur/rss.xml
+    enabled: true
+    keywords: ["melodifestivalen", "melfest", "eurovision"]
+
+  - name: Switzerland - SRF Kultur RSS
+    label: 🇨🇭 srf.ch - Kultur RSS
+    type: rss
+    url: https://www.srf.ch/kultur/bnf/rss/8738
+    enabled: true
+    keywords: ["eurovision", "song contest", "=esc"]
+
+  - name: Switzerland - RTS Eurovision RSS
+    label: 🇨🇭 rts.ch - Eurovision RSS
+    type: rss
+    url: https://www.rts.ch/dossiers/eurosong/?format=rss/news
+    enabled: true
+
+  - name: Switzerland - RTS Culture RSS
+    label: 🇨🇭 rts.ch - Culture RSS
+    type: rss
+    url: https://www.rts.ch/info/culture/?format=rss/news
+    enabled: true
+    keywords: ["eurovision", "eurosong"]
+
+  - name: Switzerland - RSI Musica RSS
+    label: 🇨🇭 rsi.ch - Musica RSS
+    type: rss
+    url: https://www.rsi.ch/cultura/musica/?f=rss
+    enabled: true
+    keywords: ["eurovision", "eurosong"]
+
+  - name: Ukraine - Corp Suspilne Feed
+    label: 🇺🇦 corp.suspilne.media - RSS
+    type: rss
+    url: https://corp.suspilne.media/feed/
+    enabled: false    # 403 error
+    pages: 6
+    keywords: ["eurovision", "Нацвідбору", "Євробаче"]

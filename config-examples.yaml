@@ -1,0 +1,117 @@
+# Ready-to-paste examples. This file is NOT read by the monitor: copy the blocks you want into the
+# `watchers:` list in config.yaml (keep the indentation: each block starts with "  - name:").
+
+watchers:
+
+  # ── RSS with keywords ────────────────────────────────────────────────────────
+  # A feed with all kinds of news, but you only want Eurovision items.
+  # A word matches ANY word that starts with it, so endings (Eurovizijos, Eurovizijoje…) are covered.
+  - name: Example broadcaster news
+    label: Example · news (Eurovision only)
+    type: rss
+    url: https://example.com/rss
+    keywords: ["songfestival", "eurovisie", "eurovizij", "eirovizij", "=esc"]
+    #   "festival+kenges"  BOTH words must appear (any order, anything in between)
+    #   "=esc"          only the exact word ESC (not "escalator")
+    #   "*songfestival" would also match inside words ("Eurosongfestival")
+
+  # ── WordPress feed that shows few items per page: read the first 3 pages (?paged=1, 2, 3) each run ──
+  - name: Example slow feed
+    type: rss
+    url: https://example.com/feed/
+    pages: 3
+    # page_param: paged        # only change this if the site uses another name than ?paged=
+
+  # ── Page that lists articles, only new links that match ──────────────────────
+  - name: Example news homepage
+    type: page
+    url: https://example.com/
+    mode: links
+    selector: "main"            # optional: only look at this part of the page
+    keywords: ["songfestival", "eurovisie"]
+
+  # ── Same, but also report links whose TITLE changed while the URL stayed the same (live blogs) ──
+  - name: Example news list with live blog
+    type: page
+    url: https://example.com/dossier/
+    mode: links
+    notify_title_changes: true     # adds "✏️ old title → new title" messages
+    # selector: "main"
+
+  # ── Page that only lists IDs (even inside HTML comments); every ID is a small item on its own URL ──
+  #    mode: matches finds the IDs with a regex, reports NEW ones, and opens each new one to read it.
+  - name: Example ID list
+    type: page
+    url: https://example.com/calls.html
+    mode: matches
+    pattern: '<box\s+[\w-]+\s+(\d+)\s+file>'              # one (...) group around the ID
+    item_url: https://example.com/boxes/item.jsp?id={id}  # {id} is replaced by each new ID
+    keywords: ["eurovision", "song contest"]               # optional: checked against the item's text/title
+    # fetch_items: false     # don't open the items (then keywords only see the ID)
+    # max_fetch: 15          # max new items opened per run
+
+  # ── Page whose items sit in a <script> as JSON (nothing visible in the HTML) ──
+  #    Named groups: id, title, url. JSON escapes (ę, \/) are decoded, relative urls are made absolute.
+  #    Without an id group, the url (or the title) is the ID.
+  - name: Example items in a script
+    type: page
+    url: https://example.com/news
+    mode: matches
+    pattern: '"title"\s*:\s*"(?P<title>[^"]+)",\s*"url"\s*:\s*"(?P<url>[^"]+)"'
+    # keywords: ["eurovision"]
+
+  # ── Page whose text gets edited: show only changed lines that mention a keyword ──
+  - name: Example casting page
+    type: page
+    url: https://example.com/casting/
+    mode: text
+    keywords: ["casting", "deadline"]
+
+  # ── WordPress with text diffs ────────────────────────────────────────────────
+  # Shows what changed in posts/pages, not just that something was modified.
+  - name: Example posts
+    type: wordpress
+    url: https://example.com/wp-json/wp/v2/posts
+    diff: true
+    # keywords: ["songfestival"]            # optional
+    # ignore_patterns: ["^Posted \\d+"]      # optional: skip lines that always change
+
+  # ── WordPress media with a description diff (media has no 'content') ────────
+  - name: Example media
+    type: wordpress
+    url: https://example.com/wp-json/wp/v2/media
+    diff: true
+    diff_fields: ["description", "caption"]
+
+  # ── Sitemap that shows what changed on each page ─────────────────────────────
+  - name: Example sitemap
+    type: sitemap
+    url: https://example.com/sitemap_index.xml
+    snapshots: true
+    snapshot_selector: "article"          # focus on the real content (default: whole page minus header/footer/nav/aside)
+    # snapshot_urls: ["/news/", "/blog/"]   # only snapshot URLs matching these (regex)
+    # snapshot_limit: 30                    # pages saved silently on the first run
+    # snapshot_max_fetch: 15                # max pages opened per run
+    # keywords: ["songfestival"]            # only report URLs containing a keyword
+
+  # ── PDF file: shows which sentences changed ──────────────────────────────────
+  - name: Example terms and conditions
+    type: pdf
+    url: https://example.com/files/TermsAndConditions_en.pdf
+    # text_only: true                  # ignore re-exported files whose text is identical
+    # ignore_patterns: ['^Printed on']  # skip sentences that always change
+    # keywords: ["deadline"]            # only report changed sentences containing a keyword
+
+  # ── A file or page that answers 404 until it is published (and may disappear again) ──
+  #    Works for type: pdf and type: page.
+  - name: Example file that comes and goes
+    type: pdf
+    url: https://example.com/files/Rules.pdf
+    allow_missing: true         # 404 = "not online yet", not an error
+    # notify_removed: false      # don't send a message when it disappears again
+
+  # ── Different display name than the technical name ───────────────────────────
+  - name: Romania sitemap               # keep this stable: it decides the file in state/
+    label: 🇷🇴 Romania · sitemap          # this is what Discord shows
+    type: sitemap
+    url: https://example.ro/sitemap.xml
