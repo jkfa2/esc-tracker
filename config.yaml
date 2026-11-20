@@ -410,7 +410,7 @@ watchers:
     label: 🇪🇪 eeter.err.ee - Eesti Laul submissions
     type: page
     url: https://eeter.err.ee/eestiLaul
-    enabled: true
+    enabled: false    # irrelevant to track atm
     mode: text
     selector: 'div.left-block'
 
@@ -651,7 +651,7 @@ watchers:
     url: https://dreamingsanmarinosongcontest.com/casting/
     enabled: true
     mode: text
-    exclude_selectors: ["header", "footer", "nav"]
+    exclude_selectors: ["header", "footer", "nav", "#footer-widgets"]
 
   - name: San Marino - Dreaming San Marino Song Contest Regulations
     label: 🇸🇲 dreamingsanmarinosongcontest.com - Regulations (EN)
