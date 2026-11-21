@@ -14,7 +14,7 @@
 
 defaults:
   timeout: 30            # seconds per request
-  fail_alert_after: 3    # Discord alert after this many failed runs in a row (and again when it recovers)
+  fail_alert_after: 8    # Discord alert after this many failed runs in a row (and again when it recovers)
   # user_agent: "..."    # optional; default looks like a normal browser
   translate: en
 
