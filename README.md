@@ -72,6 +72,11 @@ From the sites already in the config: the San Marino casting page is `text`, and
 ("Comments (12)", "2 hours ago"), because those change constantly. Links that have no text are ignored, and
 `keywords` also apply (the old or the new title must match).
 
+**Tables in `mode: text` (`table_rows: true`):** by default every table cell is its own line, so when a casting
+list moves "Name" from 11:00 to 11:30 you only see `-Name` and `+Name`, without the times. With `table_rows: true`
+each row stays on one line (`11:00 | Name`), so the diff shows the time too. Turning it on for an existing watcher
+gives one "page changed" message, because the stored text has a different format.
+
 **`mode: matches` (for pages that hide their items):** some pages only contain a list of IDs in the source, even
 inside HTML comments (`<!--<box box-left 51895483 file>-->`), and load each item from its own URL. Give a regex with
 one `(...)` group around the ID (`pattern:`) and the URL of one item with `{id}` in it (`item_url:`). New IDs are
@@ -219,3 +224,9 @@ Other commands: `python monitor.py list`, `python monitor.py run --dry-run` (pri
 - **Idle repos.** GitHub pauses scheduled workflows in public repos after 60 days without repository activity. The monitor commits a small heartbeat file weekly to avoid that. If GitHub does disable it, one click on "Enable workflow" in the Actions tab brings it back.
 - **State size.** Snapshots live in `state/` in your repo. They're capped (about 100 pages per sitemap watcher, 50 texts per WordPress watcher).
 - Be polite: intervals in minutes, not seconds.
+
+---
+
+## Updating an existing install
+
+Replace `monitor.py`, `requirements.txt` (and this README) in your repo: *Add file → Upload files*, drop the new files with the same names, and commit. Do **not** replace your `config.yaml`; copy what you need from `config-examples.yaml`. Existing state files keep working. The next scheduled run uses the new code.

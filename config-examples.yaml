@@ -60,6 +60,13 @@ watchers:
     pattern: '"title"\s*:\s*"(?P<title>[^"]+)",\s*"url"\s*:\s*"(?P<url>[^"]+)"'
     # keywords: ["eurovision"]
 
+  # ── Page with a table (casting list, schedule): keep each row on one line so a diff shows the time ──
+  - name: Example casting table
+    type: page
+    url: https://example.com/casting/
+    mode: text
+    table_rows: true      # "11:00 | Name" instead of "11:00" and "Name" on separate lines
+
   # ── Page whose text gets edited: show only changed lines that mention a keyword ──
   - name: Example casting page
     type: page

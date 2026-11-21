@@ -647,13 +647,22 @@ _BLOCKS = ["p", "div", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6", "tr
            "figcaption", "dt", "dd", "pre", "form"]
 
 
-def block_text(node) -> str:
+_BLOCKS_ROWS = [b for b in _BLOCKS if b not in ("td", "th")]
+
+
+def block_text(node, rows: bool = False) -> str:
     """Visible text with one line per block (paragraph, list item, heading…). Inline tags like <b> or <a>
-    stay inside their line, and line breaks in the HTML source don't split sentences."""
-    for t in node.find_all(_BLOCKS):
-        t.insert_before(" ")
-        t.insert_after(" ")
-    raw = node.get_text("").replace("\n", " ").replace(" ", "\n")
+    stay inside their line, and line breaks in the HTML source don't split sentences.
+    rows=True keeps each table row on ONE line, cells separated by ' | ' (so '11:00 | Name' stays together)."""
+    if rows:
+        for tr in node.find_all("tr"):
+            cells = tr.find_all(["td", "th"], recursive=False)
+            for c in cells[:-1]:
+                c.insert_after(" | ")
+    for t in node.find_all(_BLOCKS_ROWS if rows else _BLOCKS):
+        t.insert_before("\u2029")
+        t.insert_after("\u2029")
+    raw = node.get_text("").replace("\n", " ").replace("\u2029", "\n")
     return "\n".join(l for l in (" ".join(x.split()) for x in raw.splitlines()) if l)
 
 
@@ -690,7 +699,7 @@ def extract(content: bytes, w: dict):
     if mode == "html":
         raw = "\n".join(n.prettify() for n in nodes)
     else:
-        raw = "\n".join(block_text(n) for n in nodes)
+        raw = "\n".join(block_text(n, bool(w.get("table_rows"))) for n in nodes)
     lines = [" ".join(l.split()) for l in raw.splitlines()]
     return "\n".join(l for l in lines if l and not any(p.search(l) for p in ign))
 
@@ -1022,8 +1031,7 @@ def send_discord(webhook: str, source: str, wtype: str, notes: list[Note]) -> No
         batches.append(cur)
     for batch in batches:
         for _ in range(4):
-            r = requests.post(webhook, json={"embeds": batch, "username": "Tall Top Tipster",
-                                             "avatar_url": "https://i.ibb.co/p6MYwR2N/martingreen.png",
+            r = requests.post(webhook, json={"embeds": batch, "username": "Site Monitor",
                                              "allowed_mentions": {"parse": []}}, timeout=20)
             if r.status_code == 429:
                 time.sleep(float(r.json().get("retry_after", 2)) + 0.5)
