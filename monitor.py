@@ -1116,7 +1116,8 @@ def send_discord(webhook: str, source: str, wtype: str, notes: list[Note]) -> No
         batches.append(cur)
     for batch in batches:
         for _ in range(4):
-            r = requests.post(webhook, json={"embeds": batch, "username": "Site Monitor",
+            r = requests.post(webhook, json={"embeds": batch, "username": "Tall Top Tipster",
+                                             "avatar_url": "https://i.ibb.co/p6MYwR2N/martingreen.png",
                                              "allowed_mentions": {"parse": []}}, timeout=20)
             if r.status_code == 429:
                 time.sleep(float(r.json().get("retry_after", 2)) + 0.5)
