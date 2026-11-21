@@ -652,6 +652,7 @@ watchers:
     enabled: true
     mode: text
     exclude_selectors: ["header", "footer", "nav", "#footer-widgets"]
+    table_rows: true
 
   - name: San Marino - Dreaming San Marino Song Contest Regulations
     label: 🇸🇲 dreamingsanmarinosongcontest.com - Regulations (EN)
