@@ -34,7 +34,7 @@ watchers:
     label: 🇦🇱 festivali.rtsh.al - Sitemap
     type: sitemap
     url: https://festivali.rtsh.al/sitemap_index.xml
-    enabled: true
+    enabled: false
     deep: true
 
   - name: Cyprus - RIK Corporate Sitemap
