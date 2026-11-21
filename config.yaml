@@ -797,14 +797,14 @@ watchers:
   # ═══════════════════════════════════════════════════════════════════════════
 
   - name: Albania - Fest Search RSS
-    label: 🇦🇱 Albania - Fest Search RSS
+    label: 🇦🇱 rtsh.al - Fest Search RSS
     type: rss
     url: https://rtsh.al/?s=fest&feed=rss2
     enabled: true
     keywords: ["=fest", "festival+kenges"]
   
   - name: Australia - TV Tonight RSS
-    label: 🇦🇺 Australia - TV Tonight - Eurovision RSS
+    label: 🇦🇺 tvtonight.com.au - Eurovision RSS
     type: rss
     url: https://tvtonight.com.au/category/eurovision/feed
     enabled: true
