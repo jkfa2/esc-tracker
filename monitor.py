@@ -207,6 +207,10 @@ class Ctx:
                       allowed_methods=["GET"])
         self.session.mount("https://", HTTPAdapter(max_retries=retry))
         self.session.mount("http://", HTTPAdapter(max_retries=retry))
+        self.dead_hosts: dict[str, str] = {}              # host -> short cause, for sites we could not connect to this run
+        self.skipped: dict[str, int] = {}                  # host -> number of checks skipped because of that
+        self.fail_alerts: list[tuple[dict, int, str]] = []  # (watcher, failures in a row, short cause), sent as one message
+        self.recovered: list[dict] = []                    # watchers that work again after an alert
         self._tr_key = os.environ.get("GOOGLE_TRANSLATE_API_KEY", "").strip()
         self._tr_cache: dict[str, str] | None = None  # "lang|text" -> translation ("" = no translation needed)
         self._tr_new = False
@@ -1116,8 +1120,7 @@ def send_discord(webhook: str, source: str, wtype: str, notes: list[Note]) -> No
         batches.append(cur)
     for batch in batches:
         for _ in range(4):
-            r = requests.post(webhook, json={"embeds": batch, "username": "Tall Top Tipster",
-                                             "avatar_url": "https://i.ibb.co/p6MYwR2N/martingreen.png",
+            r = requests.post(webhook, json={"embeds": batch, "username": "Site Monitor",
                                              "allowed_mentions": {"parse": []}}, timeout=20)
             if r.status_code == 429:
                 time.sleep(float(r.json().get("retry_after", 2)) + 0.5)
@@ -1163,29 +1166,71 @@ def save_state(name: str, st: dict) -> None:
     state_path(name).write_text(json.dumps(st, ensure_ascii=False, separators=(",", ":")), "utf-8")
 
 
+class HostDown(Exception):
+    """Raised instead of a request when the same site already failed to connect in this run."""
+
+
+def host_of(w: dict) -> str:
+    return urlparse(w["url"]).netloc.lower()
+
+
+def short_error(e: Exception, timeout=30) -> tuple[str, bool]:
+    """(short readable cause, True if no connection to the site could be made at all: DNS, refused, SSL, connect timeout)."""
+    s = str(e)
+    low = s.lower()
+    if isinstance(e, requests.HTTPError) and e.response is not None:
+        code = e.response.status_code
+        what = {401: "login required", 403: "access denied (the site may block this server)", 404: "page not found",
+                410: "page removed", 429: "too many requests (rate limited)"}.get(code, "server error" if code >= 500 else "error")
+        return f"🚫 HTTP {code}: {what}", False
+    m = re.search(r"too many (\d{3}) error", low)
+    if isinstance(e, requests.exceptions.RetryError) or m:
+        return f"🛠️ Server error (HTTP {m.group(1) if m else '5xx'})", False
+    if isinstance(e, requests.exceptions.ConnectTimeout) or "connecttimeout" in low:
+        return f"⏱️ Could not connect (no answer within {timeout} s)", True
+    if isinstance(e, requests.Timeout) or "timed out" in low or "timeouterror" in low:
+        return f"⏱️ Timed out (no answer within {timeout} s)", False
+    if any(x in low for x in ("name or service not known", "nameresolution", "getaddrinfo", "name resolution")):
+        return "🌐 Site not found (DNS error)", True
+    if re.search(r"\bssl|certificate", low):
+        return "🔒 SSL / certificate problem", True
+    if "connection refused" in low:
+        return "🔌 Connection refused", True
+    if isinstance(e, HostDown):
+        return s, True
+    if isinstance(e, requests.ConnectionError) or "connection" in low:
+        return "🔌 Connection failed or dropped", False
+    return (clean(s, 220) if isinstance(e, ValueError) else f"{type(e).__name__}: {clean(s, 200)}"), False
+
+
 def run_watcher(w: dict, ctx: Ctx, dry_run: bool) -> None:
     name = w["name"]
     st = load_state(name) or {}
     prev = st.get("data")
     fails = st.get("fails", 0)
     threshold = w.get("fail_alert_after", ctx.defaults.get("fail_alert_after", 3))
+    host = host_of(w)
+    if host in ctx.dead_hosts:
+        # No connection to this site could be made a moment ago: don't wait for it again. This is neutral: it is
+        # not counted as a failure of this watcher, and its state is left alone.
+        log(f"  - {name}: skipped, {host} could not be reached in this run ({ctx.dead_hosts[host]})")
+        ctx.skipped[host] = ctx.skipped.get(host, 0) + 1
+        return
     try:
         data, notes = CHECKERS[w["type"]](w, prev, ctx)
     except Exception as e:
         fails += 1
-        log(f"  ✗ {name}: {e} (failure #{fails})")
+        short, unreachable = short_error(e, ctx.timeout)
+        log(f"  ✗ {name}: {short} (failure #{fails})  [{clean(str(e), 300)}]")
+        if unreachable:
+            ctx.dead_hosts[host] = short
         if dry_run:
             return
         if fails == threshold:
-            try:
-                deliver(w, [Note(f"⚠️ Check has failed {fails}× in a row", str(e)[:800], w["url"], COLORS["error"])], False)
-            except Exception as e2:
-                log(f"  ✗ could not send failure alert: {e2}")
+            ctx.fail_alerts.append((w, fails, short))
         save_state(name, {**st, "fails": fails})
         return
 
-    if fails >= threshold:
-        notes.append(Note("✅ Working again", "", w["url"], 0x2ECC71))
     if prev is None:
         log(f"  • {name}: baseline recorded")
     elif notes:
@@ -1199,6 +1244,46 @@ def run_watcher(w: dict, ctx: Ctx, dry_run: bool) -> None:
         return  # state not saved, so the change is reported again next time
     if not dry_run:
         save_state(name, {"v": 1, "fails": 0, "checked": now().isoformat(timespec="seconds"), "data": data})
+        if fails >= threshold:  # an alert was sent earlier: tell that it works again
+            ctx.recovered.append(w)
+
+
+def flush_alerts(ctx: Ctx) -> None:
+    """Send all failure alerts and 'working again' messages of this run, grouped per site and cause."""
+    notes: list[Note] = []
+    groups: dict[tuple[str, str], list[tuple[dict, int]]] = {}
+    for w, fails, short in ctx.fail_alerts:
+        groups.setdefault((host_of(w), short), []).append((w, fails))
+    for (host, short), items in groups.items():
+        runs = max(f for _, f in items)
+        extra = (f"\n{ctx.skipped[host]} other check(s) on this site were skipped" if ctx.skipped.get(host) else "")
+        if len(items) == 1:
+            w = items[0][0]
+            notes.append(Note(f"⚠️ {label(w)}: check failing", f"{short}\nFailed {runs}× in a row{extra}", w["url"], COLORS["error"]))
+        else:
+            lines = [f"• {label(w)}" for w, _ in items[:15]] + ([f"… and {len(items) - 15} more"] if len(items) > 15 else [])
+            notes.append(Note(f"⚠️ {host}: {len(items)} checks failing",
+                              f"{short}\nFailed {runs}× in a row\n" + "\n".join(lines) + extra, items[0][0]["url"], COLORS["error"]))
+    ok: dict[str, list[dict]] = {}
+    for w in ctx.recovered:
+        ok.setdefault(host_of(w), []).append(w)
+    for host, ws in ok.items():
+        if len(ws) == 1:
+            notes.append(Note(f"✅ {label(ws[0])}: working again", "", ws[0]["url"], 0x2ECC71))
+        else:
+            notes.append(Note(f"✅ {host}: {len(ws)} checks working again",
+                              "\n".join(f"• {label(w)}" for w in ws[:15]), ws[0]["url"], 0x2ECC71))
+    ctx.fail_alerts.clear()
+    ctx.recovered.clear()
+    if not notes:
+        return
+    webhook = os.environ.get("DISCORD_WEBHOOK_URL")
+    try:
+        if not webhook:
+            raise RuntimeError("DISCORD_WEBHOOK_URL is not set")
+        send_discord(webhook, "Monitor status", "error", notes)
+    except Exception as e:
+        log(f"  ✗ could not send status messages: {e}")
 
 
 def load_config() -> tuple[dict, list[dict]]:
@@ -1240,6 +1325,7 @@ def cmd_run(args) -> None:
             run_watcher(w, ctx, args.dry_run)
         except Exception as e:  # last line of defence: never let one watcher stop the others
             log(f"  ✗ {w['name']}: unexpected error: {e!r}")
+    flush_alerts(ctx)
     if not args.dry_run:
         ctx.save_translations()
     if ctx._tr_count:
