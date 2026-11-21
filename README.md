@@ -214,6 +214,24 @@ Other commands: `python monitor.py list`, `python monitor.py run --dry-run` (pri
 
 ---
 
+## Translating headlines (`translate`)
+
+Add `translate: en` under `defaults:` in `config.yaml` and every new headline gets an English line below it:
+
+```
+🆕 [Водещата на „Евровизия“ …](link)
+↳ The host of "Eurovision" …
+```
+
+- It applies to new links (`mode: links` and `matches`), RSS items and WordPress posts. Text diffs, PDFs and sitemap URLs are not translated.
+- Switch it off for one watcher with `translate: false` (do this for sites that are already in English: they would only cost characters). Another language: `translate: de`.
+- It uses Google Cloud Translation (Basic). Put the API key in the repo secret `GOOGLE_TRANSLATE_API_KEY` (and add the env line to the workflow, see `.github/workflows/monitor.yml`).
+- Only headlines of items that are about to be reported are translated, and every translation is remembered in `state/_translations.json`, so the same headline is never paid for twice. A headline that is already in the target language gets no extra line.
+- Failure is harmless: no key, a quota error or an outage just means messages without the translation line. After a key/quota error, no more requests are made during that run.
+- Test the setup: `GOOGLE_TRANSLATE_API_KEY=... python monitor.py translate "Нова песен"`.
+
+---
+
 ## Good to know
 
 - **Feeds with one item per page.** Some WordPress feeds only show the latest post (`?paged=2` shows the one before). Add `pages: 3` to an RSS watcher and each run reads the first 3 pages. A page that fails or is empty just stops the loop.

@@ -72,6 +72,9 @@ def label(w: dict) -> str:
     return str(w.get("label") or w["name"])
 
 
+html_unescape = htmllib.unescape
+
+
 def clean(s, limit: int = 200) -> str:
     """Strip HTML/whitespace and make text safe to embed in a Discord markdown link."""
     if s is None:
@@ -204,6 +207,84 @@ class Ctx:
                       allowed_methods=["GET"])
         self.session.mount("https://", HTTPAdapter(max_retries=retry))
         self.session.mount("http://", HTTPAdapter(max_retries=retry))
+        self._tr_key = os.environ.get("GOOGLE_TRANSLATE_API_KEY", "").strip()
+        self._tr_cache: dict[str, str] | None = None  # "lang|text" -> translation ("" = no translation needed)
+        self._tr_new = False
+        self._tr_off = False   # set after a quota/key error so we stop asking for the rest of the run
+        self._tr_warned = False
+        self._tr_count = 0
+
+    # ---- translation (Google Cloud Translation Basic v2) -------------------------------------------
+    def _tr_target(self, w: dict) -> str | None:
+        v = w.get("translate", self.defaults.get("translate"))
+        if not v:
+            return None
+        return "en" if v is True else str(v)
+
+    def _tr_load(self) -> dict[str, str]:
+        if self._tr_cache is None:
+            try:
+                self._tr_cache = json.loads((STATE_DIR / "_translations.json").read_text("utf-8"))
+            except (OSError, ValueError):
+                self._tr_cache = {}
+        return self._tr_cache
+
+    def tr(self, w: dict, text: str) -> str | None:
+        """Translation of a short text (a headline) into the language set by `translate:`, or None
+        (translation off, already in that language, nothing to translate, or the service failed)."""
+        target = self._tr_target(w)
+        text = " ".join((text or "").split())[:300]
+        if not target or not text or not any(ch.isalpha() for ch in text):
+            return None
+        cache = self._tr_load()
+        key = f"{target}|{text}"
+        if key in cache:
+            return cache[key] or None
+        if self._tr_off:
+            return None
+        if not self._tr_key:
+            if not self._tr_warned:
+                log("  ! translate is on but GOOGLE_TRANSLATE_API_KEY is not set: sending without translations")
+                self._tr_warned = True
+            return None
+        try:
+            r = requests.post("https://translation.googleapis.com/language/translate/v2",
+                              headers={"X-goog-api-key": self._tr_key},  # not in the URL, so it can't leak into logs
+                              json={"q": text, "target": target, "format": "text"}, timeout=20)
+        except requests.RequestException as e:
+            log(f"  ! translation request failed ({type(e).__name__}): sending without translations")
+            return None
+        if r.status_code != 200:
+            try:
+                msg = r.json().get("error", {}).get("message", "")
+            except ValueError:
+                msg = ""
+            log(f"  ! translation service answered {r.status_code}: {msg[:200]}")
+            if r.status_code in (400, 401, 403, 429):  # bad key, API not enabled, quota reached: don't hammer it
+                self._tr_off = True
+            return None
+        try:
+            t = r.json()["data"]["translations"][0]
+            out, det = html_unescape(t["translatedText"]).strip(), str(t.get("detectedSourceLanguage", ""))
+        except (ValueError, KeyError, IndexError):
+            return None
+        self._tr_count += len(text)
+        same = det.split("-")[0].lower() == target.split("-")[0].lower() or norm(out) == norm(text)
+        cache[key] = "" if same else out
+        self._tr_new = True
+        return None if same else out
+
+    def tline(self, w: dict, text: str) -> str:
+        """'\n↳ translation' to append to a headline line, or '' when there is nothing to add."""
+        t = self.tr(w, text)
+        return f"\n↳ {clean(t, 220)}" if t else ""
+
+    def save_translations(self) -> None:
+        if not self._tr_new or self._tr_cache is None:
+            return
+        cache = dict(list(self._tr_cache.items())[-3000:])
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        (STATE_DIR / "_translations.json").write_text(json.dumps(cache, ensure_ascii=False, indent=0), "utf-8")
 
     def get(self, url: str, w: dict | None = None, params: dict | None = None) -> requests.Response:
         headers = {}
@@ -539,7 +620,7 @@ def check_wp(w: dict, prev: dict | None, ctx: Ctx):
     limit = 10 if diff_on else 15
     lines: list[str] = []
     for i, v in new[:limit]:
-        lines.append(f"🆕 {md_link(v['title'] or '#' + i, v['link'])} · #{i}")
+        lines.append(f"🆕 {md_link(v['title'] or '#' + i, v['link'])} · #{i}" + ctx.tline(w, v["title"]))
         if diff_on and v.get("text"):
             ex = re.sub(r"[_*`]", " ", " ".join(v["text"].split()))[:200]
             lines.append(f"└ _{ex}_")
@@ -626,6 +707,9 @@ def check_rss(w: dict, prev: dict | None, ctx: Ctx):
     for eid in reversed(new_ids[:max_n]):  # oldest first
         e = entries[eid]
         body = clean(e.get("summary"), 350)
+        tl = ctx.tline(w, clean(e.get("title"), 250))
+        if tl:
+            body = tl.strip() + ("\n" + body if body else "")
         if e.get("published"):
             body += f"\n_{e['published']}_"
         notes.append(Note(clean(e.get("title"), 250) or "(untitled)", body.strip(), e.get("link")))
@@ -773,7 +857,7 @@ def check_matches(w: dict, prev: dict | None, ctx: Ctx):
                 continue
         seen[i] = title
         if kw_ok(kw, text, title, i):
-            found.append(md_link(clean(title) or i, link))
+            found.append(md_link(clean(title) or i, link) + (ctx.tline(w, title) if len(found) < 20 else ""))
     if len(seen) > 3000:
         seen = dict(list(seen.items())[-3000:])
     state = {"ids": seen}
@@ -806,9 +890,10 @@ def check_page(w: dict, prev: dict | None, ctx: Ctx):
         changed = {u: ot for u, ot in changed.items() if kw_ok(kw, ot[0], ot[1], u)}
         if prev is None or not (new or changed):
             return state, []
-        lines = bullets("🆕", [md_link(t or u, u) for u, t in new.items()], 20)
-        lines += bullets("✏️", [f"{clean(o, 100)} → {md_link(clean(n, 100), u)}"
-                                for u, (o, n) in changed.items()], 10)
+        lines = bullets("🆕", [md_link(t or u, u) + (ctx.tline(w, t) if i < 20 else "")
+                               for i, (u, t) in enumerate(new.items())], 20)
+        lines += bullets("✏️", [f"{clean(o, 100)} → {md_link(clean(n, 100), u)}" + (ctx.tline(w, n) if i < 10 else "")
+                                for i, (u, (o, n)) in enumerate(changed.items())], 10)
         parts = ([f"{len(new)} new link(s)"] if new else []) + ([f"{len(changed)} title change(s)"] if changed else [])
         return state, [Note(", ".join(parts), "\n".join(lines), w["url"])]
 
@@ -1154,6 +1239,10 @@ def cmd_run(args) -> None:
             run_watcher(w, ctx, args.dry_run)
         except Exception as e:  # last line of defence: never let one watcher stop the others
             log(f"  ✗ {w['name']}: unexpected error: {e!r}")
+    if not args.dry_run:
+        ctx.save_translations()
+    if ctx._tr_count:
+        log(f"translated {ctx._tr_count} characters this run")
     if not args.dry_run and not args.only:
         y, wk, _ = now().isocalendar()
         STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -1239,6 +1328,21 @@ def cmd_test(args) -> None:
         print(f"\n[{len(text)} characters]")
 
 
+def cmd_translate(args) -> None:
+    """python monitor.py translate "some text": checks that the translation setup works."""
+    defaults, _ = load_config()
+    ctx = Ctx(defaults)
+    ctx._tr_cache = {}  # don't read or write the real cache
+    w = {"translate": args.to}
+    out = ctx.tr(w, args.text)
+    if out:
+        print(f"{args.text}\n  → {out}")
+    elif ctx._tr_key and not ctx._tr_off:
+        print("(no translation needed: the text already seems to be in that language)")
+    else:
+        sys.exit("Translation did not work: see the message above.")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd")
@@ -1251,12 +1355,15 @@ def main() -> None:
     m = sub.add_parser("match", help="check how a keyword matches a text")
     m.add_argument("keyword")
     m.add_argument("text")
+    tt = sub.add_parser("translate", help="test the translation setup with a text")
+    tt.add_argument("text")
+    tt.add_argument("--to", default="en")
     args = ap.parse_args()
     cmd = args.cmd or "run"
     if cmd == "run":
         args.only = getattr(args, "only", None)
         args.dry_run = getattr(args, "dry_run", False)
-    {"run": cmd_run, "list": cmd_list, "test": cmd_test, "match": cmd_match}[cmd](args)
+    {"run": cmd_run, "list": cmd_list, "test": cmd_test, "match": cmd_match, "translate": cmd_translate}[cmd](args)
 
 
 if __name__ == "__main__":
