@@ -661,7 +661,7 @@ watchers:
     label: 🇸🇲 dreamingsanmarinosongcontest.com - Casting
     type: page
     url: https://dreamingsanmarinosongcontest.com/casting/
-    enabled: false
+    enabled: true
     mode: text
     exclude_selectors: ["header", "footer", "nav", "#footer-widgets"]
     table_rows: true
