@@ -233,6 +233,14 @@ watchers:
   #                  Use *songfestival to catch "Eurovisiesongfestival"
   # ═══════════════════════════════════════════════════════════════════════════
 
+  - name: Andorra - Eurovisió Search
+    label: 🇦🇩 rtva.ad - Eurovisió Search
+    type: page
+    url: https://www.rtva.ad/search?q=eurovisi&type=
+    enabled: true
+    mode: links
+    selector: 'div.Container_wrapper__Tzg3z:nth-of-type(3) > div.container-lg'
+  
   - name: Armenia - Eurovision News
     label: 🇦🇲 eurovision.am - News page
     type: page
@@ -324,6 +332,15 @@ watchers:
     selector: "ul.flex.flex-col"
     notify_title_changes: true
 
+  - name: Belgium - RTBF Concours Eurovision
+    label: 🇧🇪 rtbf.be - Eurovision News
+    type: page
+    url: https://www.rtbf.be/emission/concours-eurovision
+    enabled: true
+    mode: links
+    selector: 'section.box-border.flex'
+    notify_title_changes: true
+
   - name: Bulgaria - BNT Eurovision News
     label: 🇧🇬 bnt.bg - Евровизия News
     type: page
@@ -365,6 +382,33 @@ watchers:
     mode: link
     selector: 'div.lg\:-mx-4 > div.flex.flex-col'
 
+  - name: Croatia - Regulations
+    label: 🇭🇷 hrt.hr - Regulations
+    type: page
+    url: https://o-nama.hrt.hr/hrt/dokumenti-zakoni-pravila-pravni-akti-7761
+    enabled: true
+    mode: link
+    selector: 'div.w-full:nth-of-type(11) > dl > div.border-b.border-gray5'
+    keywords: ["dora", "eurosong", "eurovi"]
+
+  - name: Cyprus - RIK Press Releases
+    label: 🇨🇾 corporate.rik.cy - Press Release
+    type: page
+    url: https://corporate.rik.cy/%CE%B4%CE%B5%CE%BB%CF%84%CE%AF%CE%B1-%CF%84%CF%8D%CF%80%CE%BF%CF%85/
+    enabled: true
+    mode: link
+    selector: 'section.decisions-listings'
+    keywords: ["eurovision"]
+
+  - name: Czechia - Eurovision page
+    label: 🇨🇿 ceskatelevize.cz - Eurovision page
+    type: page
+    url: http://www.ceskatelevize.cz/eurovize
+    enabled: true
+    mode: link
+    selector: 'img.v_1nbmep20.v_1xzkn3k6'
+    selector_exclude: ["header.ctg.ctg-header"]
+
   - name: Denmark - DMGP Submissions Form
     label: 🇩🇰 dr.dk - DMGP Submissions Form
     type: page
@@ -387,6 +431,15 @@ watchers:
     enabled: true
     mode: links
     selector: 'div.hydra-site-front-page-content > div.dre-container.dre-container--margin-bottom'
+    keywords: ["grand prix", "eurovision"]
+
+  - name: Denmark - Ekstrabladet
+    label: 🇩🇰 ekstrabladet.dk - Event & Kultur
+    type: page
+    url: https://ekstrabladet.dk/underholdning/kultur/
+    enabled: true
+    mode: links
+    selector: 'div.section-list-grid.svelte-1clady2'
     keywords: ["grand prix", "eurovision"]
 
   - name: EBU - Reference Group
@@ -487,6 +540,48 @@ watchers:
     mode: links
     selector: 'div.td-ss-main-content'
 
+  - name: Hungary - Telex Eurovision
+    label: 🇭🇺 telex.hu - Eurovision
+    type: page
+    url: https://telex.hu/cimke/eurovizio
+    enabled: true
+    mode: links
+    selector: 'div.list__group'
+
+  - name: Hungary - MTVA Announcements
+    label: 🇭🇺 mtva.hu - Press Release
+    type: page
+    url: https://mtva.hu/sajtokapcsolat/kozlemenyeink/
+    enabled: true
+    mode: links
+    selector: '#col-91-1'
+    keywords: ["eurovízí", "eurovizi", "eurovision"]
+
+  - name: Iceland - Söngvakeppnin page
+    label: 🇮🇸 ruv.is - Söngvakeppnin
+    type: page
+    url: https://www.ruv.is/songvakeppnin
+    enabled: true
+    mode: links
+    selector: 'div.w-full.\[\&\>\*\+\*\]\:mt-8'
+
+  - name: Ireland - Eurovision news
+    label: 🇮🇪 rte.ie - Eurovision news
+    type: page
+    url: https://www.rte.ie/entertainment/eurovision-song-contest/
+    enabled: true
+    mode: links
+    selector: '#main_inner'
+    translate: false
+
+  - name: Israel - Kan Eurovision news
+    label: 🇮🇱 kan.org.il - Eurovision news
+    type: page
+    url: https://www.kan.org.il/tags/generaltags/%D7%90%D7%99%D7%A8%D7%95%D7%95%D7%99%D7%96%D7%99%D7%95%D7%9F/
+    enabled: true
+    mode: links
+    selector: 'ul.grid-list.tag-items-container'
+
   - name: Italy - Sanremo page
     label: 🇮🇹 rai.it - Sanremo
     type: page
@@ -580,6 +675,14 @@ watchers:
     mode: links
     exclude_selectors: ["header", "footer", "nav"]
 
+  - name: Monaco - L'Observateur de Monaco News
+    label: 🇲🇨 lobservateurdemonaco.com - Eurovision news
+    type: page
+    url: https://lobservateurdemonaco.com/?s=eurovision
+    enabled: true
+    mode: links
+    selector: '#tdi_121'
+
   - name: Montenegro - Regulativa
     label: 🇲🇪 rtcg.me - Regulations
     type: page
@@ -606,6 +709,32 @@ watchers:
     mode: links
     selector: '#content > div'
     keywords: ["eurovision", "eurosong", "montesong", "evrovizi"]
+
+  - name: Netherlands - NPO Persberichten
+    label: 🇳🇱 npo.nl - Press Release
+    type: page
+    url: https://npo.nl/pers/persberichten-en-publicaties
+    enabled: true
+    mode: links
+    selector: 'div.chakra-container > div.chakra-stack > div.chakra-stack:nth-of-type(2) > div'
+    keywords: ["songfestival"]
+
+  - name: Netherlands - Songfestival AVROTROS
+    label: 🇳🇱 songfestival.nl - News
+    type: page
+    url: https://songfestival.nl/
+    enabled: true
+    mode: links
+    selector: 'section.grid-block-static > div.grid-block-static__skeleton > div.swiper-initialized.swiper-horizontal > div.swiper-wrapper'
+
+  - name: Netherlands - AVROTROS Persberichten
+    label: 🇳🇱 pers.avrotros.nl - Press Release
+    type: page
+    url: https://pers.avrotros.nl/
+    enabled: true
+    mode: links
+    selector: 'div.pp-headline-scroll.pp_moduleblock'
+    keywords: ["songfestival", "eurovision", "eurovisie"]
 
   - name: Norway - MGP Page
     label: 🇳🇴 nrk.no - MGP Page
@@ -802,6 +931,13 @@ watchers:
     url: https://rtsh.al/?s=fest&feed=rss2
     enabled: true
     keywords: ["=fest", "festival+kenges"]
+
+  - name: Armenia - Hraparak RSS
+    label: 🇦🇲 hraparak.am - RSS
+    type: rss
+    url: https://hraparak.am/rss-feeds
+    enabled: true
+    keywords: ["Եվրատեսիլ"]
   
   - name: Australia - TV Tonight RSS
     label: 🇦🇺 tvtonight.com.au - Eurovision RSS
@@ -831,6 +967,20 @@ watchers:
     enabled: true
     keywords: ["=esc", "esc2", "song contest", "eurovision"]
 
+  - name: Belgium - HLN RSS
+    label: 🇧🇪 hln.be - RSS
+    type: rss
+    url: https://www.hln.be/home/rss.xml
+    enabled: true
+    keywords: ["songfestival", "eurovision", "eurovisie"]
+
+  - name: Belgium - VRT Communicatie RSS
+    label: 🇧🇪 communicatie.vrt.be - Press Release
+    type: rss
+    url: https://communicatie.vrt.be/feed
+    enabled: true
+    keywords: ["songfestival", "eurosong"]
+
   - name: Denmark - DR News RSS
     label: 🇩🇰 dr.dk - News RSS
     type: rss
@@ -852,11 +1002,25 @@ watchers:
     url: https://yle.fi/rss/t/18-200201/fi
     enabled: true
 
+  - name: France - Le Parisien Eurovision RSS
+    label: 🇫🇷 leparisien.fr - Eurovision RSS
+    type: rss
+    url: https://feeds.leparisien.fr/leparisien/rss/culture-loisirs/musique/eurovision
+    enabled: true
+
   - name: Iceland - Eurovision RSS
     label: 🇮🇸 ruv.is - Eurovision Tag RSS
     type: rss
     url: https://www.ruv.is/rss/tag/eurovision
     enabled: true
+
+  - name: Ireland - RTÉ Press Release RSS
+    label: 🇮🇪 about.rte.ie - Press Release
+    type: rss
+    url: https://about.rte.ie/feed/
+    enabled: true
+    translate: false
+    keywords: ["eurovision", "eurosong"]
 
   - name: Italy - Rai Ufficio Stampa RSS
     label: 🇮🇹 rai.it - Ufficio Stampa RSS
