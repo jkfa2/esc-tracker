@@ -240,6 +240,7 @@ watchers:
     enabled: true
     mode: links
     selector: 'div.Container_wrapper__Tzg3z:nth-of-type(3) > div.container-lg'
+    keywords: ["eurovisi", "eurovísí"]
   
   - name: Armenia - Eurovision News
     label: 🇦🇲 eurovision.am - News page
