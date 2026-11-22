@@ -1127,6 +1127,13 @@ watchers:
     enabled: true
     keywords: ["eurovision", "eurosong"]
 
+  - name: Switzerland - Blick RSS
+    label: 🇨🇭 blick.ch - Eurovision RSS
+    type: rss
+    url: https://www.blick.ch/people-tv/tv/rss.xml
+    enabled: true
+    keywords: ["=esc", "eurovision", "song contest"]
+
   - name: Ukraine - Corp Suspilne Feed
     label: 🇺🇦 corp.suspilne.media - RSS
     type: rss
