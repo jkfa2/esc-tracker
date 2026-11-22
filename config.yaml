@@ -544,7 +544,7 @@ watchers:
     label: 🇭🇺 telex.hu - Eurovision
     type: page
     url: https://telex.hu/cimke/eurovizio
-    enabled: true
+    enabled: false    # 403, changed to RSS
     mode: links
     selector: 'div.list__group'
 
@@ -1007,6 +1007,13 @@ watchers:
     type: rss
     url: https://feeds.leparisien.fr/leparisien/rss/culture-loisirs/musique/eurovision
     enabled: true
+
+  - name: Hungary - Telex RSS
+    label: 🇭🇺 telex.hu - Eurovision RSS
+    type: rss
+    url: https://telex.hu/rss
+    enabled: true
+    keywords: ["eurovizio"]
 
   - name: Iceland - Eurovision RSS
     label: 🇮🇸 ruv.is - Eurovision Tag RSS
