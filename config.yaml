@@ -386,7 +386,7 @@ watchers:
     label: 🇭🇷 hrt.hr - Regulations
     type: page
     url: https://o-nama.hrt.hr/hrt/dokumenti-zakoni-pravila-pravni-akti-7761
-    enabled: true
+    enabled: false  # cant find it
     mode: link
     selector: 'div.w-full:nth-of-type(11) > dl > div.border-b.border-gray5'
     keywords: ["dora", "eurosong", "eurovi"]
@@ -406,7 +406,7 @@ watchers:
     url: http://www.ceskatelevize.cz/eurovize
     enabled: true
     mode: link
-    selector: 'img.v_1nbmep20.v_1xzkn3k6'
+    selector: 'nav.v_11zkl4k1'
     selector_exclude: ["header.ctg.ctg-header"]
 
   - name: Denmark - DMGP Submissions Form
@@ -437,7 +437,7 @@ watchers:
     label: 🇩🇰 ekstrabladet.dk - Event & Kultur
     type: page
     url: https://ekstrabladet.dk/underholdning/kultur/
-    enabled: true
+    enabled: false  # JavaScript loaded
     mode: links
     selector: 'div.section-list-grid.svelte-1clady2'
     keywords: ["grand prix", "eurovision"]
@@ -561,7 +561,7 @@ watchers:
     label: 🇮🇸 ruv.is - Söngvakeppnin
     type: page
     url: https://www.ruv.is/songvakeppnin
-    enabled: true
+    enabled: false  # cant find them
     mode: links
     selector: 'div.w-full.\[\&\>\*\+\*\]\:mt-8'
 
@@ -578,7 +578,7 @@ watchers:
     label: 🇮🇱 kan.org.il - Eurovision news
     type: page
     url: https://www.kan.org.il/tags/generaltags/%D7%90%D7%99%D7%A8%D7%95%D7%95%D7%99%D7%96%D7%99%D7%95%D7%9F/
-    enabled: true
+    enabled: false  # 403 block
     mode: links
     selector: 'ul.grid-list.tag-items-container'
 
@@ -714,7 +714,7 @@ watchers:
     label: 🇳🇱 npo.nl - Press Release
     type: page
     url: https://npo.nl/pers/persberichten-en-publicaties
-    enabled: true
+    enabled: false  # JavaScript loaded
     mode: links
     selector: 'div.chakra-container > div.chakra-stack > div.chakra-stack:nth-of-type(2) > div'
     keywords: ["songfestival"]
@@ -725,7 +725,7 @@ watchers:
     url: https://songfestival.nl/
     enabled: true
     mode: links
-    selector: 'section.grid-block-static > div.grid-block-static__skeleton > div.swiper-initialized.swiper-horizontal > div.swiper-wrapper'
+    selector: 'section.grid-block-static'
 
   - name: Netherlands - AVROTROS Persberichten
     label: 🇳🇱 pers.avrotros.nl - Press Release
@@ -1014,11 +1014,17 @@ watchers:
     url: https://www.ruv.is/rss/tag/eurovision
     enabled: true
 
+  - name: Iceland - Söngvakeppnin RSS
+    label: 🇮🇸 ruv.is - Söngvakeppnin Tag RSS
+    type: rss
+    url: https://www.ruv.is/rss/tag/songvakeppnin
+    enabled: true
+
   - name: Ireland - RTÉ Press Release RSS
     label: 🇮🇪 about.rte.ie - Press Release
     type: rss
     url: https://about.rte.ie/feed/
-    enabled: true
+    enabled: false  # 403 block
     translate: false
     keywords: ["eurovision", "eurosong"]
 
