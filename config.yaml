@@ -1012,7 +1012,7 @@ watchers:
     label: 🇭🇺 telex.hu - Eurovision RSS
     type: rss
     url: https://telex.hu/rss
-    enabled: true
+    enabled: false  # 403
     keywords: ["eurovizio"]
 
   - name: Iceland - Eurovision RSS
