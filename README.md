@@ -220,8 +220,10 @@ Add `translate: en` under `defaults:` in `config.yaml` and every new headline ge
 
 ```
 🆕 [Водещата на „Евровизия“ …](link)
-↳ The host of "Eurovision" …
+🌐 *The host of "Eurovision" …*
 ```
+
+For RSS items the translation is shown in bold at the top, followed by an empty line and the original summary.
 
 - It applies to new links (`mode: links` and `matches`), RSS items and WordPress posts. Text diffs, PDFs and sitemap URLs are not translated.
 - Switch it off for one watcher with `translate: false` (do this for sites that are already in English: they would only cost characters). Another language: `translate: de`.

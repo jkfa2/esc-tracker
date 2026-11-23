@@ -279,9 +279,9 @@ class Ctx:
         return None if same else out
 
     def tline(self, w: dict, text: str) -> str:
-        """'\n↳ translation' to append to a headline line, or '' when there is nothing to add."""
+        """'\n🌐 *translation*' to append under a headline in a list, or '' when there is nothing to add."""
         t = self.tr(w, text)
-        return f"\n↳ {clean(t, 220)}" if t else ""
+        return f"\n🌐 *{clean(t, 220).replace('*', '')}*" if t else ""
 
     def save_translations(self) -> None:
         if not self._tr_new or self._tr_cache is None:
@@ -711,9 +711,9 @@ def check_rss(w: dict, prev: dict | None, ctx: Ctx):
     for eid in reversed(new_ids[:max_n]):  # oldest first
         e = entries[eid]
         body = clean(e.get("summary"), 350)
-        tl = ctx.tline(w, clean(e.get("title"), 250))
-        if tl:
-            body = tl.strip() + ("\n" + body if body else "")
+        tr = ctx.tr(w, clean(e.get("title"), 250))
+        if tr:  # bold translation, then an empty line, then the original summary
+            body = f"🌐 **{clean(tr, 220).replace('*', '')}**" + ("\n\n" + body if body else "")
         if e.get("published"):
             body += f"\n_{e['published']}_"
         notes.append(Note(clean(e.get("title"), 250) or "(untitled)", body.strip(), e.get("link")))
