@@ -810,7 +810,7 @@ watchers:
     label: 🇸🇲 segreteria.sm - Delibere Segreteria
     type: page
     url: https://www.interni.segreteria.sm/on-line/home/delibere-congresso-di-stato.html?modalita=inline&P0_path=%2Fhome%2Ftomcat%2Findicizzazione%2Findexdelibere&P0_paginazione=25&P0_pagina=1&P0_oggetto=eurovision&P0_numero=&P0_data_gg=&P0_data_mm=&P0_data_aa=&annoiniziale=&annofinale=&P0_stato_delibera=&categoria=&P0_document=&P0_categories=&P0_data_ordered=&P0_orderBy=data_ordered%2Cnumero&P0_order=desc%2Casc&P0_operatorMustBe=only&indicericerca=-1&x=0&y=0
-    enabled: true
+    enabled: false # not relevant right now and tracks too much text
     mode: text
     selector: '#columns'
 
