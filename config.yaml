@@ -610,7 +610,7 @@ watchers:
     url: https://www.rai.it/programmi/sanremo/
     enabled: true
     mode: links
-    notify_title_changes: true
+    notify_title_changes: false
 
   - name: Lithuania - Eurovizija page
     label: 🇱🇹 lrt.lt - Eurovizija page
