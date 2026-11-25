@@ -215,6 +215,27 @@ watchers:
     enabled: true
     cache_bust: true
 
+  - name: San Marino - SMSC WP Media
+    label: 🇸🇲 sanmarinosongcontest.com - Media
+    type: wordpress
+    url: https://sanmarinosongcontest.com/wp-json/wp/v2/media
+    enabled: true
+    cache_bust: true
+
+  - name: San Marino - SMSC WP Posts
+    label: 🇸🇲 sanmarinosongcontest.com - Posts
+    type: wordpress
+    url: https://sanmarinosongcontest.com/wp-json/wp/v2/posts
+    enabled: true
+    cache_bust: true
+
+  - name: San Marino - SMSC WP Pages
+    label: 🇸🇲 sanmarinosongcontest.com - Pages
+    type: wordpress
+    url: https://sanmarinosongcontest.com/wp-json/wp/v2/pages
+    enabled: true
+    cache_bust: true
+
   # ── Not set up yet: text diffs for WordPress ───────────────────────────────
   #    Works for posts, pages and custom post types such as "artistet". Add to a watcher:
   #      - diff: true. Add and set to true; checks more fields (without this it checks title, link, and modified date).
