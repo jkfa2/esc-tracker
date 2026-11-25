@@ -1,10 +1,6 @@
 name: Site monitor
 
 on:
-  schedule:
-    # Every 15 minutes. GitHub may delay scheduled runs by a few minutes; 5 min is the minimum.
-    # Private repo? Use "*/30 * * * *" or less often to stay inside the free minutes (see README).
-    - cron: "*/15 * * * *"
   workflow_dispatch:        # "Run workflow" button in the Actions tab
   push:
     paths: ["config.yaml"]  # run right after you edit the config (records a baseline for new watchers)
