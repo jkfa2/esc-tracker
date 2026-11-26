@@ -426,7 +426,7 @@ watchers:
     type: page
     url: https://www.hrt.hr/dora
     enabled: true
-    mode: link
+    mode: links
     selector: 'div.lg\:-mx-4 > div.flex.flex-col'
 
   - name: Croatia - Eurosong
@@ -434,7 +434,7 @@ watchers:
     type: page
     url: https://www.hrt.hr/eurosong
     enabled: true
-    mode: link
+    mode: links
     selector: 'div.lg\:-mx-4 > div.flex.flex-col'
 
   - name: Croatia - Regulations
@@ -442,7 +442,7 @@ watchers:
     type: page
     url: https://o-nama.hrt.hr/hrt/dokumenti-zakoni-pravila-pravni-akti-7761
     enabled: false  # cant find it
-    mode: link
+    mode: links
     selector: 'div.w-full:nth-of-type(11) > dl > div.border-b.border-gray5'
     keywords: ["dora", "eurosong", "eurovi"]
 
@@ -451,7 +451,7 @@ watchers:
     type: page
     url: https://corporate.rik.cy/%CE%B4%CE%B5%CE%BB%CF%84%CE%AF%CE%B1-%CF%84%CF%8D%CF%80%CE%BF%CF%85/
     enabled: true
-    mode: link
+    mode: links
     selector: 'section.decisions-listings'
     keywords: ["eurovision"]
 
@@ -460,7 +460,7 @@ watchers:
     type: page
     url: http://www.ceskatelevize.cz/eurovize
     enabled: true
-    mode: link
+    mode: links
     selector: 'nav.v_11zkl4k1'
     selector_exclude: ["header.ctg.ctg-header"]
 
