@@ -63,7 +63,7 @@ watchers:
     label: 🇲🇹 maltaeurovision.mt - Sitemap
     type: sitemap
     url: https://maltaeurovision.mt/sitemap_index.xml
-    enabled: true
+    enabled: false  # not necessary as WP picks up same stuff
     deep: true
     translate: false
 
@@ -73,6 +73,7 @@ watchers:
     url: https://eurovision.md/sitemap
     enabled: true
     deep: true
+    snapshots: true
 
   - name: Romania - Sitemap
     label: 🇷🇴 eurovisionromania.ro - Sitemap
@@ -109,24 +110,31 @@ watchers:
     type: wordpress
     url: https://festivali.rtsh.al/wp-json/wp/v2/media
     enabled: true
+    thumbnails: true
 
   - name: Albania FiK website - WP Artists
     label: 🇦🇱 festivali.rtsh.al - Artists
     type: wordpress
     url: https://festivali.rtsh.al/wp-json/wp/v2/artistet/
     enabled: true
+    diff: true
+    thumbnails: true
 
   - name: Albania FiK website - WP Pages
     label: 🇦🇱 festivali.rtsh.al - Pages
     type: wordpress
     url: https://festivali.rtsh.al/wp-json/wp/v2/pages
     enabled: true
+    diff: true
+    thumbnails: true
 
   - name: Albania FiK website - WP Posts
     label: 🇦🇱 festivali.rtsh.al - Posts
     type: wordpress
     url: https://festivali.rtsh.al/wp-json/wp/v2/posts
     enabled: true
+    diff: true
+    thumbnails: true
 
   - name: Greece - WP Media
     label: 🇬🇷 eurovision.ert.gr - Media
@@ -134,6 +142,7 @@ watchers:
     url: https://eurovision.ert.gr/wp-json/wp/v2/media
     enabled: true
     cache_bust: true
+    thumbnails: true
 
   - name: Greece - WP Posts
     label: 🇬🇷 eurovision.ert.gr - Posts
@@ -141,6 +150,8 @@ watchers:
     url: https://eurovision.ert.gr/wp-json/wp/v2/posts
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: Greece - WP Pages
     label: 🇬🇷 eurovision.ert.gr - Pages
@@ -148,6 +159,8 @@ watchers:
     url: https://eurovision.ert.gr/wp-json/wp/v2/pages
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: Malta - WP Media
     label: 🇲🇹 maltaeurovision.mt - Media
@@ -156,6 +169,7 @@ watchers:
     enabled: true
     cache_bust: true
     translate: false
+    thumbnails: true
 
   - name: Malta - WP Posts
     label: 🇲🇹 maltaeurovision.mt - Posts
@@ -164,6 +178,8 @@ watchers:
     enabled: true
     cache_bust: true
     translate: false
+    diff: true
+    thumbnails: true
 
   - name: Malta - WP Pages
     label: 🇲🇹 maltaeurovision.mt - Pages
@@ -172,6 +188,8 @@ watchers:
     enabled: true
     cache_bust: true
     translate: false
+    diff: true
+    thumbnails: true
 
   - name: Romania - WP Media
     label: 🇷🇴 eurovisionromania.ro - Media
@@ -179,6 +197,7 @@ watchers:
     url: https://eurovisionromania.ro/wp-json/wp/v2/media
     enabled: true
     cache_bust: true
+    thumbnails: true
 
   - name: Romania - WP Posts
     label: 🇷🇴 eurovisionromania.ro - Posts
@@ -186,6 +205,8 @@ watchers:
     url: https://eurovisionromania.ro/wp-json/wp/v2/posts
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: Romania - WP Pages
     label: 🇷🇴 eurovisionromania.ro - Pages
@@ -193,6 +214,8 @@ watchers:
     url: https://eurovisionromania.ro/wp-json/wp/v2/pages
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: San Marino - WP Media
     label: 🇸🇲 dreamingsanmarinosongcontest.com - Media
@@ -200,6 +223,7 @@ watchers:
     url: https://dreamingsanmarinosongcontest.com/wp-json/wp/v2/media
     enabled: true
     cache_bust: true
+    thumbnails: true
 
   - name: San Marino - WP Posts
     label: 🇸🇲 dreamingsanmarinosongcontest.com - Posts
@@ -207,6 +231,8 @@ watchers:
     url: https://dreamingsanmarinosongcontest.com/wp-json/wp/v2/posts
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: San Marino - WP Pages
     label: 🇸🇲 dreamingsanmarinosongcontest.com - Pages
@@ -214,6 +240,8 @@ watchers:
     url: https://dreamingsanmarinosongcontest.com/wp-json/wp/v2/pages
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: San Marino - SMSC WP Media
     label: 🇸🇲 sanmarinosongcontest.com - Media
@@ -221,6 +249,7 @@ watchers:
     url: https://sanmarinosongcontest.com/wp-json/wp/v2/media
     enabled: true
     cache_bust: true
+    thumbnails: true
 
   - name: San Marino - SMSC WP Posts
     label: 🇸🇲 sanmarinosongcontest.com - Posts
@@ -228,6 +257,8 @@ watchers:
     url: https://sanmarinosongcontest.com/wp-json/wp/v2/posts
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   - name: San Marino - SMSC WP Pages
     label: 🇸🇲 sanmarinosongcontest.com - Pages
@@ -235,6 +266,8 @@ watchers:
     url: https://sanmarinosongcontest.com/wp-json/wp/v2/pages
     enabled: true
     cache_bust: true
+    diff: true
+    thumbnails: true
 
   # ── Not set up yet: text diffs for WordPress ───────────────────────────────
   #    Works for posts, pages and custom post types such as "artistet". Add to a watcher:
