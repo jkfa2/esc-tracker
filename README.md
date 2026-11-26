@@ -214,6 +214,21 @@ Other commands: `python monitor.py list`, `python monitor.py run --dry-run` (pri
 
 ---
 
+## Thumbnails for WordPress (`thumbnails: true`)
+
+Add `thumbnails: true` to a `type: wordpress` watcher and the message gets a small picture at the top right
+(click it in Discord to enlarge):
+
+- **Media watcher** (`/wp-json/wp/v2/media`): the first new picture (jpg, png, gif or webp). The "medium" size is used
+  when WordPress made one, so Discord doesn't have to load a huge original. PDFs, video and SVG get no picture.
+- **Posts and pages**: the featured image of the first new item that has one (one extra small request per item, at most 3
+  per run).
+
+A message holds one thumbnail, so with several new pictures you see the first one. If the picture can't be found
+the message is sent without it.
+
+---
+
 ## Translating headlines (`translate`)
 
 Add `translate: en` under `defaults:` in `config.yaml` and every new headline gets an English line below it:

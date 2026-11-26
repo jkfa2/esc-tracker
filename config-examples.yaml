@@ -83,6 +83,12 @@ watchers:
     # keywords: ["songfestival"]            # optional
     # ignore_patterns: ["^Posted \\d+"]      # optional: skip lines that always change
 
+  # ── WordPress with a small picture in the message (media files, or the featured image of posts) ──
+  - name: Example media with pictures
+    type: wordpress
+    url: https://example.com/wp-json/wp/v2/media
+    thumbnails: true
+
   # ── WordPress media with a description diff (media has no 'content') ────────
   - name: Example media
     type: wordpress

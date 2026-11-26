@@ -65,6 +65,7 @@ class Note:
     body: str = ""
     url: str | None = None
     color: int | None = None
+    image: str | None = None  # small thumbnail shown in the message (click to enlarge)
 
 
 def label(w: dict) -> str:
@@ -543,6 +544,20 @@ def check_sitemap(w: dict, prev: dict | None, ctx: Ctx):
 # --------------------------------------------------------------------------- WordPress REST
 
 WP_FIELDS = "id,date,modified,modified_gmt,link,slug,title,status,source_url,mime_type"
+THUMB_TYPES = ("image/jpeg", "image/png", "image/gif", "image/webp")
+
+
+def wp_thumb(media: dict) -> str | None:
+    """Address of a small version of a WordPress media item (medium size if it exists), or None if it isn't a
+    picture Discord can show."""
+    if (media.get("mime_type") or "") not in THUMB_TYPES:
+        return None
+    sizes = (media.get("media_details") or {}).get("sizes") or {}
+    for name in ("medium", "medium_large", "large"):
+        u = (sizes.get(name) or {}).get("source_url")
+        if u:
+            return u
+    return media.get("source_url") or None
 
 
 def wp_text(it: dict, fields: list[str]) -> str:
@@ -563,7 +578,9 @@ def check_wp(w: dict, prev: dict | None, ctx: Ctx):
     base, _, qs = w["url"].partition("?")
     diff_on = bool(w.get("diff"))
     dfields = list(w.get("diff_fields", ["content"]))
-    fields = w.get("fields", WP_FIELDS) + ("," + ",".join(dfields) if diff_on else "")
+    thumbs_on = bool(w.get("thumbnails"))
+    fields = (w.get("fields", WP_FIELDS) + ("," + ",".join(dfields) if diff_on else "")
+              + (",media_details,featured_media" if thumbs_on else ""))
     params = {"per_page": 100, "orderby": "modified", "order": "desc", "_fields": fields}
     params.update(dict(parse_qsl(qs)))
     params.update(w.get("params", {}))
@@ -573,6 +590,8 @@ def check_wp(w: dict, prev: dict | None, ctx: Ctx):
     kw = compile_keywords(w)
     ign = [re.compile(p) for p in w.get("ignore_patterns", [])]
     cur: dict[str, dict] = {}
+    thumbs: dict[str, str] = {}    # id -> small picture (media items), kept only for this run
+    featured: dict[str, int] = {}  # id -> featured image id (posts and pages), kept only for this run
     total = None
     for page in range(1, int(w.get("pages", 1)) + 1):
         p = dict(params, page=page)
@@ -599,6 +618,12 @@ def check_wp(w: dict, prev: dict | None, ctx: Ctx):
                 "link": it.get("link") or it.get("source_url"),
                 "title": clean(t, 100) or it.get("slug") or "",
             }
+            if thumbs_on:
+                tu = wp_thumb(it)
+                if tu:
+                    thumbs[str(it["id"])] = tu
+                elif isinstance(it.get("featured_media"), int) and it["featured_media"] > 0:
+                    featured[str(it["id"])] = it["featured_media"]
             if diff_on:
                 txt = "\n".join(l for l in wp_text(it, dfields).splitlines() if not any(x.search(l) for x in ign))
                 cur[str(it["id"])]["text"] = txt[:max_text]
@@ -655,7 +680,24 @@ def check_wp(w: dict, prev: dict | None, ctx: Ctx):
     if not parts:
         parts.append("item count changed")
     link = (new[0][1]["link"] if len(new) == 1 and not mod else mod[0][1]["link"] if len(mod) == 1 and not new else w["url"])
-    return state, [Note(", ".join(parts), "\n".join(lines), link)]
+    image = None
+    if thumbs_on:  # a small picture for the first new item that has one
+        tries = 0
+        for i, _ in new[:limit]:
+            if i in thumbs:
+                image = thumbs[i]
+                break
+            if i in featured and tries < 3:  # a post or page: look up its featured image (one small request)
+                tries += 1
+                try:
+                    m = ctx.get(base.rsplit("/", 1)[0] + f"/media/{featured[i]}", w,
+                                params={"_fields": "mime_type,source_url,media_details"}).json()
+                    image = wp_thumb(m) if isinstance(m, dict) else None
+                except (requests.RequestException, ValueError):
+                    image = None
+                if image:
+                    break
+    return state, [Note(", ".join(parts), "\n".join(lines), link, image=image)]
 
 
 # --------------------------------------------------------------------------- RSS / Atom
@@ -1106,6 +1148,8 @@ def send_discord(webhook: str, source: str, wtype: str, notes: list[Note]) -> No
         }
         if n.url:
             e["url"] = n.url
+        if n.image:
+            e["thumbnail"] = {"url": n.image}
         embeds.append(e)
     # Discord allows max 10 embeds and ~6000 characters in total per message
     batches, cur, size = [], [], 0
@@ -1138,7 +1182,8 @@ def deliver(w: dict, notes: list[Note], dry_run: bool) -> None:
         return
     if dry_run:
         for n in notes:
-            print(f"\n--- would notify: [{label(w)}] {n.title}\n{n.url or ''}\n{n.body}\n")
+            print(f"\n--- would notify: [{label(w)}] {n.title}\n{n.url or ''}\n{n.body}\n"
+                  + (f"[thumbnail: {n.image}]\n" if n.image else ""))
         return
     webhook = os.environ.get("DISCORD_WEBHOOK_URL")
     if not webhook:
