@@ -708,6 +708,14 @@ watchers:
     mode: links
     exclude_selectors: ["header", "footer", "nav"]
 
+  - name: Moldova - Concurentii 2027
+    label: 🇲🇩 eurovision.md - Concurentii 2027
+    type: page
+    url: https://eurovision.md/concurenti/2027
+    enabled: true
+    mode: text
+    selector: 'main.site-content'
+
   - name: Moldova - Comunicate TRM
     label: 🇲🇩 trm.md - Comunicate TRM
     type: page
